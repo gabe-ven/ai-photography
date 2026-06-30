@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+*.local
+
+# Uploads / generated artifacts
+backend/uploads/
+backend/tmp/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
