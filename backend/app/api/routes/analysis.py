@@ -10,8 +10,15 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.core.config import Settings, get_settings
-from app.schemas.analysis import AnalysisResponse, ExifInfo, ImageInfo, VisionInfo
+from app.schemas.analysis import (
+    AnalysisResponse,
+    CompositionInfo,
+    ExifInfo,
+    ImageInfo,
+    VisionInfo,
+)
 from app.services import image_io
+from app.services.composition import composition_pipeline
 from app.services.exif import exif_service
 from app.services.vision import analysis_pipeline
 
@@ -40,9 +47,11 @@ async def analyze(
     )
     exif = exif_service.extract_exif(image)
     vision = analysis_pipeline.run_vision_analysis(image)
+    composition = composition_pipeline.run_composition_analysis(image)
 
     return AnalysisResponse(
         image=ImageInfo(**info),
         exif=ExifInfo(**exif),
         vision=VisionInfo(**vision),
+        composition=CompositionInfo(**composition),
     )

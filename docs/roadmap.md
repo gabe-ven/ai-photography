@@ -19,9 +19,13 @@
 - [x] Dominant colors
 - [x] Histogram generation
 - [x] Dynamic range estimate
-- [ ] Rule of thirds
-- [ ] Leading lines
-- [ ] Horizon detection
+- [x] Rule of thirds
+- [x] Leading lines
+- [x] Horizon detection
+- [x] Symmetry detection
+- [x] Subject position
+- [x] Edge density
+- [x] Negative space estimation
 
 ---
 

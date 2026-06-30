@@ -69,8 +69,77 @@ export interface VisionInfo {
   orientation: Orientation;
 }
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface RuleOfThirds {
+  score: number;
+  follows_rule: boolean;
+  centroid: Point;
+  nearest_power_point: Point;
+  distance_to_power_point: number;
+}
+
+export interface LineSegment {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  angle: number;
+}
+
+export interface LeadingLines {
+  has_leading_lines: boolean;
+  line_count: number;
+  dominant_angle: number | null;
+  lines: LineSegment[];
+}
+
+export interface Horizon {
+  horizon_detected: boolean;
+  horizon_y: number | null;
+  is_level: boolean;
+  tilt_angle: number | null;
+}
+
+export interface Symmetry {
+  vertical: number;
+  horizontal: number;
+  is_symmetric: boolean;
+  dominant_axis: "vertical" | "horizontal";
+}
+
+export interface SubjectPosition {
+  centroid: Point;
+  region: string;
+  offset_from_center: number;
+}
+
+export interface EdgeDensity {
+  edge_density: number;
+  busyness: "minimal" | "moderate" | "busy";
+}
+
+export interface NegativeSpace {
+  negative_space_ratio: number;
+  has_significant_negative_space: boolean;
+}
+
+export interface CompositionInfo {
+  rule_of_thirds: RuleOfThirds;
+  leading_lines: LeadingLines;
+  horizon: Horizon;
+  symmetry: Symmetry;
+  subject_position: SubjectPosition;
+  edge_density: EdgeDensity;
+  negative_space: NegativeSpace;
+}
+
 export interface AnalysisResponse {
   image: ImageInfo;
   exif: ExifInfo;
   vision: VisionInfo;
+  composition: CompositionInfo;
 }

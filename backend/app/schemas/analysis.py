@@ -81,7 +81,80 @@ class VisionInfo(BaseModel):
     orientation: str
 
 
+class Point(BaseModel):
+    x: float
+    y: float
+
+
+class RuleOfThirds(BaseModel):
+    score: float
+    follows_rule: bool
+    centroid: Point
+    nearest_power_point: Point
+    distance_to_power_point: float
+
+
+class LineSegment(BaseModel):
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+    angle: float
+
+
+class LeadingLines(BaseModel):
+    has_leading_lines: bool
+    line_count: int
+    dominant_angle: float | None
+    lines: list[LineSegment]
+
+
+class Horizon(BaseModel):
+    horizon_detected: bool
+    horizon_y: float | None
+    is_level: bool
+    tilt_angle: float | None
+
+
+class Symmetry(BaseModel):
+    vertical: float
+    horizontal: float
+    is_symmetric: bool
+    dominant_axis: str
+
+
+class SubjectPosition(BaseModel):
+    centroid: Point
+    region: str
+    offset_from_center: float
+
+
+class EdgeDensity(BaseModel):
+    edge_density: float
+    busyness: str
+
+
+class NegativeSpace(BaseModel):
+    negative_space_ratio: float
+    has_significant_negative_space: bool
+
+
+class CompositionInfo(BaseModel):
+    """Geometric/structural composition metrics from OpenCV (no AI)."""
+
+    rule_of_thirds: RuleOfThirds
+    leading_lines: LeadingLines
+    horizon: Horizon
+    symmetry: Symmetry
+    subject_position: SubjectPosition
+    edge_density: EdgeDensity
+    negative_space: NegativeSpace
+
+
 class AnalysisResponse(BaseModel):
     image: ImageInfo = Field(..., description="Basic metadata about the upload.")
     exif: ExifInfo = Field(..., description="Camera metadata extracted from EXIF.")
     vision: VisionInfo = Field(..., description="Objective CV image-quality metrics.")
+    composition: CompositionInfo = Field(
+        ..., description="Geometric composition metrics."
+    )
