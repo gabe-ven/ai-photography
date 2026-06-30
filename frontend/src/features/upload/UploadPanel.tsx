@@ -1,5 +1,5 @@
+import { CameraInfoCard } from "./CameraInfoCard";
 import { Dropzone } from "./Dropzone";
-import { ImageInfoCard } from "./ImageInfoCard";
 import { useImageAnalysis } from "./useImageAnalysis";
 
 export function UploadPanel() {
@@ -29,7 +29,7 @@ export function UploadPanel() {
 
         <div className="flex flex-col gap-4">
           {result ? (
-            <ImageInfoCard info={result.image} />
+            <CameraInfoCard exif={result.exif} />
           ) : (
             <div className="rounded-2xl border border-dashed border-neutral-800 p-5 text-sm text-neutral-500">
               Run the analysis to see results. More sections (EXIF, composition,

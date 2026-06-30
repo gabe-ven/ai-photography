@@ -12,6 +12,25 @@ export interface ImageInfo {
   size_bytes: number;
 }
 
+export interface GpsCoordinates {
+  latitude: number;
+  longitude: number;
+}
+
+export interface ExifInfo {
+  has_exif: boolean;
+  make: string | null;
+  model: string | null;
+  lens: string | null;
+  iso: number | null;
+  aperture: string | null;
+  shutter_speed: string | null;
+  focal_length: string | null;
+  date_taken: string | null;
+  gps: GpsCoordinates | null;
+}
+
 export interface AnalysisResponse {
   image: ImageInfo;
+  exif: ExifInfo;
 }

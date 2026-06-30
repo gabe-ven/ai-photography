@@ -10,8 +10,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.core.config import Settings, get_settings
-from app.schemas.analysis import AnalysisResponse, ImageInfo
+from app.schemas.analysis import AnalysisResponse, ExifInfo, ImageInfo, VisionInfo
 from app.services import image_io
+from app.services.exif import exif_service
+from app.services.vision import analysis_pipeline
 
 router = APIRouter(tags=["analysis"])
 
@@ -36,4 +38,6 @@ async def analyze(
     info = image_io.describe_image(
         image, filename=file.filename or "upload", size_bytes=len(data)
     )
-    return AnalysisResponse(image=ImageInfo(**info))
+    exif = exif_service.extract_exif(image)
+
+    return AnalysisResponse(image=ImageInfo(**info), exif=ExifInfo(**exif))
