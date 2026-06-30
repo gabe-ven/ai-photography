@@ -1,3 +1,4 @@
+import { VisionDashboard } from "@/features/vision/VisionDashboard";
 import { CameraInfoCard } from "./CameraInfoCard";
 import { Dropzone } from "./Dropzone";
 import { useImageAnalysis } from "./useImageAnalysis";
@@ -16,7 +17,7 @@ export function UploadPanel() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="grid gap-6 md:grid-cols-2">
         <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900">
           <img
@@ -28,16 +29,7 @@ export function UploadPanel() {
         </div>
 
         <div className="flex flex-col gap-4">
-          {result ? (
-            <CameraInfoCard exif={result.exif} />
-          ) : (
-            <div className="rounded-2xl border border-dashed border-neutral-800 p-5 text-sm text-neutral-500">
-              Run the analysis to see results. More sections (EXIF, composition,
-              lighting, AI critique) will appear here as we build them.
-            </div>
-          )}
-
-          {error && <ErrorBanner message={error} />}
+          {result && <CameraInfoCard exif={result.exif} />}
 
           <div className="flex gap-3">
             <button
@@ -55,6 +47,16 @@ export function UploadPanel() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Analysis report — sections stack vertically. Future panels
+          (Composition, Lighting, AI Critique) drop in here as siblings. */}
+      <div className="space-y-6">
+        <VisionDashboard
+          vision={result?.vision ?? null}
+          loading={status === "loading"}
+          error={status === "error" ? error : null}
+        />
       </div>
     </div>
   );
