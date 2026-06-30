@@ -1,3 +1,4 @@
+import { CompositionDashboard } from "@/components/composition/CompositionDashboard";
 import { VisionDashboard } from "@/features/vision/VisionDashboard";
 import { CameraInfoCard } from "./CameraInfoCard";
 import { Dropzone } from "./Dropzone";
@@ -54,6 +55,12 @@ export function UploadPanel() {
       <div className="space-y-6">
         <VisionDashboard
           vision={result?.vision ?? null}
+          loading={status === "loading"}
+          error={status === "error" ? error : null}
+        />
+        <CompositionDashboard
+          composition={result?.composition ?? null}
+          imageUrl={previewUrl}
           loading={status === "loading"}
           error={status === "error" ? error : null}
         />

@@ -129,9 +129,18 @@ class SubjectPosition(BaseModel):
     offset_from_center: float
 
 
+class EdgeRegions(BaseModel):
+    top: float
+    bottom: float
+    left: float
+    right: float
+    center: float
+
+
 class EdgeDensity(BaseModel):
     edge_density: float
     busyness: str
+    regions: EdgeRegions
 
 
 class NegativeSpace(BaseModel):

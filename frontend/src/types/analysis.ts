@@ -117,9 +117,18 @@ export interface SubjectPosition {
   offset_from_center: number;
 }
 
+export interface EdgeRegions {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  center: number;
+}
+
 export interface EdgeDensity {
   edge_density: number;
   busyness: "minimal" | "moderate" | "busy";
+  regions: EdgeRegions;
 }
 
 export interface NegativeSpace {

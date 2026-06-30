@@ -132,6 +132,30 @@ def test_edge_density_checkerboard_is_busy() -> None:
     assert result["edge_density"] > 0.1
 
 
+def test_edge_density_regions_keys_and_range() -> None:
+    result = compute_edge_density(_checkerboard())
+    regions = result["regions"]
+    assert set(regions) == {"top", "bottom", "left", "right", "center"}
+    for value in regions.values():
+        assert 0.0 <= value <= 1.0
+
+
+def test_edge_density_regions_top_heavy() -> None:
+    # All edges concentrated in the top half -> top region denser than bottom.
+    img = _blank(size=100)
+    img[:50, :] = _checkerboard(size=100, cell=5)[:50, :]
+    regions = compute_edge_density(img)["regions"]
+    assert regions["top"] > regions["bottom"]
+
+
+def test_edge_density_regions_tiny_image_no_crash() -> None:
+    tiny = np.array([[10, 200], [50, 90]], dtype=np.uint8)
+    regions = compute_edge_density(tiny)["regions"]
+    assert set(regions) == {"top", "bottom", "left", "right", "center"}
+    for value in regions.values():
+        assert 0.0 <= value <= 1.0
+
+
 # --- negative space -------------------------------------------------------
 
 
