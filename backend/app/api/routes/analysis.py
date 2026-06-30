@@ -39,5 +39,10 @@ async def analyze(
         image, filename=file.filename or "upload", size_bytes=len(data)
     )
     exif = exif_service.extract_exif(image)
+    vision = analysis_pipeline.run_vision_analysis(image)
 
-    return AnalysisResponse(image=ImageInfo(**info), exif=ExifInfo(**exif))
+    return AnalysisResponse(
+        image=ImageInfo(**info),
+        exif=ExifInfo(**exif),
+        vision=VisionInfo(**vision),
+    )

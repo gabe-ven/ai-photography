@@ -15,25 +15,29 @@ def dominant_colors(image: np.ndarray, k: int = 5) -> list[dict]:
     from app.services.vision._utils import to_rgb
 
     rgb = to_rgb(image)
-    pixels = rgb.reshape(-1, 3).astype(np.float32)
+    pixels = rgb.reshape(-1, 3)
     if pixels.size == 0:
         return []
 
-    distinct = len(np.unique(pixels, axis=0))
-    clusters = int(max(1, min(k, distinct)))
+    distinct, distinct_counts = np.unique(pixels, axis=0, return_counts=True)
 
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
-    _, labels, centers = cv2.kmeans(
-        pixels, clusters, None, criteria, 3, cv2.KMEANS_PP_CENTERS
-    )
+    # When there are at most `k` distinct colors (flat or tiny images), report
+    # them exactly. kmeans is only well-posed — and only needed — when the
+    # palette is larger than the cluster count.
+    if len(distinct) <= k:
+        centers = distinct.astype(np.float32)
+        counts = distinct_counts
+    else:
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
+        _, labels, centers = cv2.kmeans(
+            pixels.astype(np.float32), k, None, criteria, 3, cv2.KMEANS_PP_CENTERS
+        )
+        counts = np.bincount(labels.flatten(), minlength=k)
 
-    labels = labels.flatten()
-    counts = np.bincount(labels, minlength=clusters)
     total = int(counts.sum())
-
     result: list[dict] = []
     for idx in np.argsort(counts)[::-1]:
-        r, g, b = (int(np.clip(round(c), 0, 255)) for c in centers[idx])
+        r, g, b = (int(np.clip(round(float(c)), 0, 255)) for c in centers[idx])
         result.append(
             {
                 "hex": f"#{r:02x}{g:02x}{b:02x}",

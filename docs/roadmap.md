@@ -4,20 +4,21 @@
 
 - [x] Image upload
 - [x] File validation
-- [ ] EXIF extraction
-- [ ] Image dimensions
-- [ ] Image orientation
+- [x] EXIF extraction
+- [x] Image dimensions
+- [x] Image orientation
 
 ---
 
 ## Phase 2 — Computer Vision
 
-- [ ] Brightness analysis
-- [ ] Contrast analysis
-- [ ] Sharpness detection
-- [ ] Blur detection
-- [ ] Dominant colors
-- [ ] Histogram generation
+- [x] Brightness analysis
+- [x] Contrast analysis
+- [x] Sharpness detection
+- [x] Blur detection (variance of Laplacian / sharpness score)
+- [x] Dominant colors
+- [x] Histogram generation
+- [x] Dynamic range estimate
 - [ ] Rule of thirds
 - [ ] Leading lines
 - [ ] Horizon detection

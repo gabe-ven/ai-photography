@@ -1,0 +1,140 @@
+import numpy as np
+from PIL import Image
+
+from app.services.vision.analysis_pipeline import run_vision_analysis
+from app.services.vision.brightness import compute_brightness
+from app.services.vision.colors import dominant_colors
+from app.services.vision.contrast import compute_contrast
+from app.services.vision.dynamic_range import compute_dynamic_range
+from app.services.vision.histogram import compute_histogram
+from app.services.vision.sharpness import compute_sharpness
+
+
+# --- brightness -----------------------------------------------------------
+
+
+def test_brightness_solid_color() -> None:
+    white = np.full((10, 10, 3), 255, dtype=np.uint8)
+    black = np.zeros((10, 10, 3), dtype=np.uint8)
+    assert compute_brightness(white) == 255.0
+    assert compute_brightness(black) == 0.0
+
+
+def test_brightness_handles_grayscale_2d() -> None:
+    gray = np.full((8, 8), 128, dtype=np.uint8)
+    assert compute_brightness(gray) == 128.0
+
+
+# --- contrast -------------------------------------------------------------
+
+
+def test_contrast_uniform_is_zero() -> None:
+    uniform = np.full((10, 10, 3), 100, dtype=np.uint8)
+    assert compute_contrast(uniform) == 0.0
+
+
+def test_contrast_high_for_split_image() -> None:
+    img = np.zeros((10, 10), dtype=np.uint8)
+    img[:, 5:] = 255
+    assert compute_contrast(img) > 100.0
+
+
+# --- sharpness ------------------------------------------------------------
+
+
+def test_sharpness_uniform_is_zero() -> None:
+    uniform = np.full((10, 10, 3), 100, dtype=np.uint8)
+    assert compute_sharpness(uniform) == 0.0
+
+
+def test_sharpness_edges_higher_than_blur() -> None:
+    sharp = np.zeros((20, 20), dtype=np.uint8)
+    sharp[:, 10:] = 255  # hard edge
+    blurry = np.tile(np.linspace(0, 255, 20, dtype=np.uint8), (20, 1))  # gradient
+    assert compute_sharpness(sharp) > compute_sharpness(blurry)
+
+
+# --- dominant colors ------------------------------------------------------
+
+
+def test_dominant_colors_solid_is_single() -> None:
+    red = np.full((10, 10, 3), 0, dtype=np.uint8)
+    red[:, :, 0] = 255
+    colors = dominant_colors(red, k=5)
+    assert len(colors) == 1
+    assert colors[0]["hex"] == "#ff0000"
+    assert colors[0]["proportion"] == 1.0
+
+
+def test_dominant_colors_two_tone_ordering() -> None:
+    img = np.zeros((10, 10, 3), dtype=np.uint8)
+    img[:7] = [255, 255, 255]  # 70% white
+    colors = dominant_colors(img, k=5)
+    assert len(colors) == 2
+    assert colors[0]["proportion"] >= colors[1]["proportion"]
+    assert abs(colors[0]["proportion"] - 0.7) < 0.01
+
+
+# --- histogram ------------------------------------------------------------
+
+
+def test_histogram_counts_sum_to_pixels() -> None:
+    img = np.random.randint(0, 256, (16, 16, 3), dtype=np.uint8)
+    hist = compute_histogram(img, bins=256)
+    assert hist["bins"] == 256
+    for channel in ("r", "g", "b"):
+        assert len(hist[channel]) == 256
+        assert sum(hist[channel]) == 16 * 16
+
+
+# --- dynamic range --------------------------------------------------------
+
+
+def test_dynamic_range_gradient() -> None:
+    gradient = np.tile(np.linspace(0, 255, 256, dtype=np.uint8), (10, 1))
+    dr = compute_dynamic_range(gradient)
+    assert dr["high"] > dr["low"]
+    assert dr["range"] > 200
+    assert dr["stops"] > 0
+
+
+def test_dynamic_range_flat_is_zero_stops() -> None:
+    flat = np.full((10, 10), 128, dtype=np.uint8)
+    dr = compute_dynamic_range(flat)
+    assert dr["range"] == 0.0
+    assert dr["stops"] == 0.0
+
+
+# --- small images & pipeline ---------------------------------------------
+
+
+def test_metrics_handle_one_pixel_image() -> None:
+    tiny = np.array([[[120, 60, 30]]], dtype=np.uint8)
+    assert compute_brightness(tiny) >= 0
+    assert compute_sharpness(tiny) == 0.0
+    assert len(dominant_colors(tiny)) == 1
+
+
+def test_pipeline_structure_and_orientation() -> None:
+    image = Image.new("RGB", (40, 20), (90, 90, 90))
+    result = run_vision_analysis(image)
+
+    assert set(result) == {
+        "brightness",
+        "contrast",
+        "sharpness",
+        "dominant_colors",
+        "histogram",
+        "dynamic_range",
+        "dimensions",
+        "orientation",
+    }
+    assert result["dimensions"] == {"width": 40, "height": 20, "aspect_ratio": 2.0}
+    assert result["orientation"] == "landscape"
+
+
+def test_pipeline_handles_grayscale_image() -> None:
+    image = Image.new("L", (20, 20), 128)
+    result = run_vision_analysis(image)
+    assert result["orientation"] == "square"
+    assert result["brightness"] == 128.0

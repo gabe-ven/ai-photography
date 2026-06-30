@@ -9,17 +9,19 @@ from __future__ import annotations
 
 import numpy as np
 
-# Rec. 601 luma weights — deterministic and channel-order explicit (RGB).
-_LUMA = np.array([0.299, 0.587, 0.114])
-
 
 def to_grayscale(image: np.ndarray) -> np.ndarray:
-    """Return a float64 luminance array from a grayscale or color image."""
+    """Return a float64 luminance array from a grayscale or color image.
+
+    Uses Rec. 601 luma weights via an explicit weighted sum (not matmul, which
+    can emit spurious FP warnings on some BLAS builds).
+    """
     arr = np.asarray(image)
     if arr.ndim == 2:
         return arr.astype(np.float64)
     if arr.ndim == 3:
-        return arr[:, :, :3].astype(np.float64) @ _LUMA
+        rgb = arr[:, :, :3].astype(np.float64)
+        return rgb[..., 0] * 0.299 + rgb[..., 1] * 0.587 + rgb[..., 2] * 0.114
     raise ValueError(f"Unsupported image shape: {arr.shape}")
 
 
