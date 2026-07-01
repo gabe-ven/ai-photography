@@ -14,7 +14,8 @@ export function CompositionSummary({
   const profile = buildCompositionProfile(composition);
   const score = overallScore(profile);
 
-  const sorted = [...profile].sort((a, b) => b.value - a.value);
+  const applicable = profile.filter((p) => p.applicable);
+  const sorted = [...applicable].sort((a, b) => b.value - a.value);
   const strongest = sorted[0];
   const weakest = sorted[sorted.length - 1];
 
@@ -44,7 +45,7 @@ export function CompositionSummary({
         </span>
       </div>
       <p className="mt-1 text-xs text-neutral-500">
-        Mean of the seven composition axes.
+        Mean of applicable composition axes.
       </p>
       <ul className="mt-4 space-y-2">
         {takeaways.map((t) => (

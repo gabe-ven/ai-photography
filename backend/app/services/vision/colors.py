@@ -5,6 +5,11 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
+# k-means accuracy doesn't require every pixel — sample this many at most.
+# 4096 gives stable cluster results while being orders of magnitude faster
+# than running k-means on a full 26 MP image.
+_MAX_PIXELS_FOR_KMEANS = 4096
+
 
 def dominant_colors(image: np.ndarray, k: int = 5) -> list[dict]:
     """Return up to `k` dominant colors, sorted by coverage (most first).
@@ -18,6 +23,12 @@ def dominant_colors(image: np.ndarray, k: int = 5) -> list[dict]:
     pixels = rgb.reshape(-1, 3)
     if pixels.size == 0:
         return []
+
+    # Subsample for large images before running k-means.
+    if len(pixels) > _MAX_PIXELS_FOR_KMEANS:
+        rng = np.random.default_rng(seed=42)
+        idx = rng.choice(len(pixels), size=_MAX_PIXELS_FOR_KMEANS, replace=False)
+        pixels = pixels[idx]
 
     distinct, distinct_counts = np.unique(pixels, axis=0, return_counts=True)
 

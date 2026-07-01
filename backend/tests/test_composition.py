@@ -8,6 +8,13 @@ from app.services.composition.horizon_detection import detect_horizon
 from app.services.composition.leading_lines import detect_leading_lines
 from app.services.composition.negative_space import estimate_negative_space
 from app.services.composition.rule_of_thirds import analyze_rule_of_thirds
+from app.services.composition.subject import Subject
+from app.services.composition.subject_localization import (
+    CompositeSubjectLocator,
+    LocatorResult,
+    VLMSubjectLocator,
+    locate_subject,
+)
 from app.services.composition.subject_position import estimate_subject_position
 from app.services.composition.symmetry import analyze_symmetry
 
@@ -192,3 +199,447 @@ def test_pipeline_structure() -> None:
         "edge_density",
         "negative_space",
     }
+
+
+# --- Subject value object -------------------------------------------------
+
+
+def test_subject_from_saliency_is_centroid_only() -> None:
+    subject = Subject.from_saliency((0.3, 0.7))
+    assert subject.centroid == (0.3, 0.7)
+    assert subject.bbox is None
+    assert subject.mask is None
+    assert subject.has_mask is False
+    assert subject.source == "saliency"
+
+
+def test_subject_centroid_from_bbox_when_no_mask() -> None:
+    subject = Subject.from_detection(
+        (0.2, 0.4, 0.6, 0.8), confidence=0.9, label="person"
+    )
+    cx, cy = subject.centroid  # bbox center
+    assert abs(cx - 0.4) < 1e-9
+    assert abs(cy - 0.6) < 1e-9
+    assert subject.source == "detector"
+    assert subject.has_mask is False
+
+
+def test_subject_centroid_from_mask_center_of_mass() -> None:
+    mask = np.zeros((100, 100), dtype=bool)
+    mask[60:81, 60:81] = True  # block centered near (0.7, 0.7)
+    subject = Subject.from_detection(
+        (0.0, 0.0, 1.0, 1.0), confidence=0.8, label="cat", mask=mask
+    )
+    cx, cy = subject.centroid
+    assert abs(cx - 0.70) < 0.02
+    assert abs(cy - 0.70) < 0.02
+    assert subject.has_mask is True
+
+
+# --- rule of thirds with subject -----------------------------------------
+
+
+def test_rule_of_thirds_uses_subject_centroid() -> None:
+    subject = Subject.from_saliency((1 / 3, 1 / 3))
+    result = analyze_rule_of_thirds(_blank(), subject)
+    assert result["follows_rule"] is True
+    assert result["score"] > 0.6
+    assert result["source"] == "saliency"
+
+
+def test_rule_of_thirds_centered_subject_fails_with_subject() -> None:
+    subject = Subject.from_detection(
+        (0.4, 0.4, 0.6, 0.6), confidence=0.9, label="person"
+    )
+    result = analyze_rule_of_thirds(_blank(), subject)
+    assert result["follows_rule"] is False
+    assert result["score"] < 0.3
+    assert result["source"] == "detector"
+
+
+# --- subject position with subject ---------------------------------------
+
+
+def test_subject_position_reports_detector_fields() -> None:
+    subject = Subject.from_detection(
+        (0.0, 0.0, 0.3, 0.3), confidence=0.77, label="bird"
+    )
+    result = estimate_subject_position(_blank(), subject)
+    assert result["region"] == "top-left"
+    assert result["label"] == "bird"
+    assert result["confidence"] == 0.77
+    assert result["has_mask"] is False
+    assert result["source"] == "detector"
+    assert result["bbox"] == {"x0": 0.0, "y0": 0.0, "x1": 0.3, "y1": 0.3}
+
+
+def test_subject_position_fallback_has_no_bbox() -> None:
+    result = estimate_subject_position(_with_square(top=15, left=15))
+    assert result["source"] == "saliency"
+    assert result["bbox"] is None
+    assert result["label"] is None
+
+
+# --- negative space subject exclusion ------------------------------------
+
+
+def test_negative_space_excludes_subject_mask() -> None:
+    blank = _blank(100)  # entirely flat -> raw ratio ~1.0
+    mask = np.zeros((100, 100), dtype=bool)
+    mask[:50, :50] = True  # subject covers a quarter of the frame
+    subject = Subject.from_detection(
+        (0.0, 0.0, 0.5, 0.5), confidence=0.9, label="person", mask=mask
+    )
+    result = estimate_negative_space(blank, subject)
+    assert result["negative_space_ratio"] > 0.95
+    assert abs(result["subject_excluded_ratio"] - 0.75) < 0.02
+    assert result["subject_excluded_ratio"] < result["negative_space_ratio"]
+
+
+def test_negative_space_falls_back_to_bbox_without_mask() -> None:
+    blank = _blank(100)
+    subject = Subject.from_detection(
+        (0.0, 0.0, 0.5, 0.5), confidence=0.9, label="person"
+    )
+    result = estimate_negative_space(blank, subject)
+    assert abs(result["subject_excluded_ratio"] - 0.75) < 0.03
+    assert result["subject_excluded_ratio"] < result["negative_space_ratio"]
+
+
+def test_negative_space_unchanged_without_subject() -> None:
+    blank = _blank(100)
+    result = estimate_negative_space(blank)
+    assert result["subject_excluded_ratio"] == result["negative_space_ratio"]
+
+
+def test_negative_space_unchanged_for_saliency_only_subject() -> None:
+    blank = _blank(100)
+    subject = Subject.from_saliency((0.4, 0.4))  # no footprint
+    result = estimate_negative_space(blank, subject)
+    assert result["subject_excluded_ratio"] == result["negative_space_ratio"]
+
+
+# --- subject localization (fallback path) --------------------------------
+
+
+def test_locate_subject_returns_valid_subject() -> None:
+    # In test/CI the detector weights are typically unavailable, so this
+    # exercises the saliency fallback. Either way we must get a usable Subject.
+    rgb = np.dstack([_with_square(top=20, left=20)] * 3)
+    subject = locate_subject(rgb)
+    assert isinstance(subject, Subject)
+    cx, cy = subject.centroid
+    assert 0.0 <= cx <= 1.0
+    assert 0.0 <= cy <= 1.0
+    assert subject.source in {"detector", "vlm", "saliency"}
+
+
+# --- VLMSubjectLocator (mocked API, no network) ---------------------------
+
+
+class _FakeMessages:
+    def __init__(self, text: str) -> None:
+        self._text = text
+
+    def create(self, **kwargs):  # noqa: ANN003 - mirrors anthropic SDK signature
+        class _Block:
+            def __init__(self, text: str) -> None:
+                self.text = text
+
+        class _Response:
+            def __init__(self, text: str) -> None:
+                self.content = [_Block(text)]
+
+        return _Response(self._text)
+
+
+class _FakeClient:
+    def __init__(self, text: str) -> None:
+        self.messages = _FakeMessages(text)
+
+
+class _RaisingClient:
+    class _Messages:
+        def create(self, **kwargs):  # noqa: ANN003
+            raise RuntimeError("simulated API failure")
+
+    def __init__(self) -> None:
+        self.messages = self._Messages()
+
+
+def _rgb_image(size: int = 40) -> np.ndarray:
+    return np.zeros((size, size, 3), dtype=np.uint8)
+
+
+def test_vlm_locator_parses_valid_json() -> None:
+    text = '{"label": "dog", "bbox": [0.1, 0.2, 0.6, 0.8], "confidence": 0.87}'
+    locator = VLMSubjectLocator(client=_FakeClient(text))
+    result = locator.locate(_rgb_image())
+    assert result is not None
+    assert result.subject.source == "vlm"
+    assert result.subject.label == "dog"
+    assert result.subject.confidence == 0.87
+    assert result.subject.bbox == (0.1, 0.2, 0.6, 0.8)
+    assert result.diagnostics["vlm_confidence"] == 0.87
+
+
+def test_vlm_locator_tolerates_single_quoted_json() -> None:
+    text = "Sure, here you go: {'label': 'tree', 'bbox': [0.0, 0.0, 1.0, 1.0], 'confidence': 0.3}"
+    locator = VLMSubjectLocator(client=_FakeClient(text))
+    result = locator.locate(_rgb_image())
+    assert result is not None
+    assert result.subject.label == "tree"
+
+
+def test_vlm_locator_rejects_invalid_bbox() -> None:
+    text = '{"label": "dog", "bbox": [0.9, 0.2, 0.1, 0.8], "confidence": 0.9}'
+    locator = VLMSubjectLocator(client=_FakeClient(text))
+    assert locator.locate(_rgb_image()) is None
+
+
+def test_vlm_locator_rejects_unparseable_response() -> None:
+    locator = VLMSubjectLocator(client=_FakeClient("not json at all"))
+    assert locator.locate(_rgb_image()) is None
+
+
+def test_vlm_locator_returns_none_on_api_exception() -> None:
+    locator = VLMSubjectLocator(client=_RaisingClient())
+    assert locator.locate(_rgb_image()) is None
+
+
+def test_vlm_locator_returns_none_without_api_key(monkeypatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    locator = VLMSubjectLocator()
+    assert locator.locate(_rgb_image()) is None
+
+
+# --- CompositeSubjectLocator tier selection --------------------------------
+
+
+class _StubLocator:
+    def __init__(self, result: LocatorResult | None) -> None:
+        self._result = result
+
+    def locate(self, rgb: np.ndarray) -> LocatorResult | None:
+        return self._result
+
+
+def _detector_result(confidence: float, second: float) -> LocatorResult:
+    subject = Subject.from_detection(
+        (0.1, 0.1, 0.5, 0.5), confidence=confidence, label="dog"
+    )
+    return LocatorResult(
+        subject=subject,
+        diagnostics={"top_confidence": confidence, "second_confidence": second},
+    )
+
+
+def _vlm_result(confidence: float) -> LocatorResult:
+    subject = Subject.from_detection(
+        (0.2, 0.2, 0.6, 0.6), confidence=confidence, label="cat", source="vlm"
+    )
+    return LocatorResult(subject=subject, diagnostics={"vlm_confidence": confidence})
+
+
+def test_composite_uses_detector_when_gate_passes() -> None:
+    # top=0.5 beats 2nd=0.1 by 5x (> 3x) and clears the 0.10 floor.
+    yolo = _StubLocator(_detector_result(confidence=0.5, second=0.1))
+    vlm = _StubLocator(_vlm_result(confidence=0.9))
+    saliency = _StubLocator(LocatorResult(subject=Subject.from_saliency((0.5, 0.5))))
+    composite = CompositeSubjectLocator(yolo=yolo, vlm=vlm, saliency=saliency)
+
+    result = composite.locate(_rgb_image())
+    assert result.subject.source == "detector"
+    assert composite.last_decision["tier"] == "detector"
+
+
+def test_composite_escalates_to_vlm_when_ratio_gate_fails() -> None:
+    # top=0.12 vs 2nd=0.10 -> ratio ~1.2x, well below the 3x gate.
+    yolo = _StubLocator(_detector_result(confidence=0.12, second=0.10))
+    vlm = _StubLocator(_vlm_result(confidence=0.9))
+    saliency = _StubLocator(LocatorResult(subject=Subject.from_saliency((0.5, 0.5))))
+    composite = CompositeSubjectLocator(yolo=yolo, vlm=vlm, saliency=saliency)
+
+    result = composite.locate(_rgb_image())
+    assert result.subject.source == "vlm"
+    assert composite.last_decision["tier"] == "vlm"
+    assert "escalated to VLM" in composite.last_decision["reason"]
+
+
+def test_composite_escalates_to_vlm_when_absolute_floor_fails() -> None:
+    # top=0.09 never clears the 0.10 absolute floor, even with no competitor.
+    yolo = _StubLocator(_detector_result(confidence=0.09, second=0.0))
+    vlm = _StubLocator(_vlm_result(confidence=0.9))
+    saliency = _StubLocator(LocatorResult(subject=Subject.from_saliency((0.5, 0.5))))
+    composite = CompositeSubjectLocator(yolo=yolo, vlm=vlm, saliency=saliency)
+
+    result = composite.locate(_rgb_image())
+    assert result.subject.source == "vlm"
+
+
+def test_composite_falls_to_saliency_when_vlm_confidence_too_low() -> None:
+    yolo = _StubLocator(None)  # no detection at all
+    vlm = _StubLocator(_vlm_result(confidence=0.25))  # below the 0.4 floor
+    saliency = _StubLocator(LocatorResult(subject=Subject.from_saliency((0.5, 0.5))))
+    composite = CompositeSubjectLocator(yolo=yolo, vlm=vlm, saliency=saliency)
+
+    result = composite.locate(_rgb_image())
+    assert result.subject.source == "saliency"
+    assert composite.last_decision["tier"] == "saliency"
+
+
+def test_composite_falls_to_saliency_when_vlm_returns_none() -> None:
+    yolo = _StubLocator(None)
+    vlm = _StubLocator(None)
+    saliency = _StubLocator(LocatorResult(subject=Subject.from_saliency((0.5, 0.5))))
+    composite = CompositeSubjectLocator(yolo=yolo, vlm=vlm, saliency=saliency)
+
+    result = composite.locate(_rgb_image())
+    assert result.subject.source == "saliency"
+
+
+def test_composite_survives_locator_exceptions() -> None:
+    class _ExplodingLocator:
+        def locate(self, rgb: np.ndarray) -> LocatorResult | None:
+            raise RuntimeError("boom")
+
+    saliency = _StubLocator(LocatorResult(subject=Subject.from_saliency((0.5, 0.5))))
+    composite = CompositeSubjectLocator(
+        yolo=_ExplodingLocator(), vlm=_ExplodingLocator(), saliency=saliency
+    )
+
+    result = composite.locate(_rgb_image())
+    assert result.subject.source == "saliency"
+
+
+# --- negative space: noise regression (issue #1) ----------------------------
+
+
+def test_negative_space_flat_noisy_image_is_high() -> None:
+    """Regression for the JPEG-noise bug.
+
+    A flat image with realistic per-pixel noise (simulates JPEG-compressed sky)
+    must report a high negative_space_ratio. Before the GaussianBlur fix, the
+    Sobel on raw noise inflated gradient magnitudes above _FLAT_THRESHOLD and
+    the ratio came back as low as 0.18 on what was visually ~80% empty sky.
+    """
+    rng = np.random.default_rng(42)
+    noisy = rng.integers(120, 137, size=(100, 100), dtype=np.uint8)
+    result = estimate_negative_space(noisy)
+    assert result["negative_space_ratio"] >= 0.80, (
+        f"Flat noisy image should be mostly negative space, "
+        f"got {result['negative_space_ratio']:.3f}"
+    )
+
+
+def test_negative_space_checkerboard_is_dense() -> None:
+    """High-frequency texture should have low negative space even after blur."""
+    checker = _checkerboard(size=100, cell=3)
+    result = estimate_negative_space(checker)
+    assert result["negative_space_ratio"] <= 0.30, (
+        f"Checkerboard should read as dense, got {result['negative_space_ratio']:.3f}"
+    )
+
+
+def test_negative_space_large_flat_region_scores_high() -> None:
+    """An image that is mostly flat (open sky) with one textured region (subject)
+    must read as significant negative space — the photographic expectation."""
+    img = np.full((100, 100), 180, dtype=np.uint8)  # flat sky
+    img[40:70, 40:70] = _checkerboard(size=30, cell=3)  # small textured subject
+    result = estimate_negative_space(img)
+    assert result["negative_space_ratio"] >= 0.75, (
+        f"Mostly-flat image should have high negative space, "
+        f"got {result['negative_space_ratio']:.3f}"
+    )
+
+
+# --- leading lines: architectural / near-vertical (issue #4 verification) ----
+
+
+def test_leading_lines_detects_near_vertical() -> None:
+    """Near-vertical converging lines (tower edges, architectural shots from below)
+    must be detected. This is the key architectural case that was failing."""
+    img = np.zeros((200, 100), dtype=np.uint8)
+    # Two converging edges: bottom-left to top-center, bottom-right to top-center
+    cv2.line(img, (10, 199), (50, 0), 255, 2)
+    cv2.line(img, (90, 199), (50, 0), 255, 2)
+    result = detect_leading_lines(img)
+    assert result["has_leading_lines"] is True, (
+        "Near-vertical converging lines were not detected — "
+        "check threshold and maxLineGap in HoughLinesP"
+    )
+    assert result["line_count"] >= 2
+
+
+def test_leading_lines_detects_converging_diagonal() -> None:
+    """Diagonals converging to a vanishing point (road, railway, corridor)."""
+    img = np.zeros((200, 200), dtype=np.uint8)
+    cv2.line(img, (0, 199), (100, 0), 255, 2)   # left edge converging up
+    cv2.line(img, (199, 199), (100, 0), 255, 2)  # right edge converging up
+    result = detect_leading_lines(img)
+    assert result["has_leading_lines"] is True
+    assert result["line_count"] >= 2
+
+
+def test_leading_lines_longest_first() -> None:
+    """Lines must be sorted longest-first so the overlay always shows the most
+    significant lines when line_count exceeds the 20-line display cap."""
+    img = np.zeros((200, 200), dtype=np.uint8)
+    cv2.line(img, (0, 100), (199, 100), 255, 2)   # full-width horizontal (~200px)
+    cv2.line(img, (100, 0), (100, 50), 255, 2)    # short vertical (50px)
+    result = detect_leading_lines(img)
+    assert result["has_leading_lines"] is True
+    lines = result["lines"]
+    for i in range(len(lines) - 1):
+        assert lines[i]["length"] >= lines[i + 1]["length"], (
+            f"Lines not sorted by length: index {i} ({lines[i]['length']:.0f}) "
+            f"< index {i+1} ({lines[i+1]['length']:.0f})"
+        )
+
+
+# --- symmetry: axis labeling verification (issue #5) -------------------------
+
+
+def test_symmetry_vertical_axis_means_left_right_mirror() -> None:
+    """'vertical' in the API means the axis of symmetry is vertical, i.e.
+    left-right mirror symmetry. A left-bright / right-dark image must have
+    LOW vertical score and HIGH horizontal score."""
+    img = np.zeros((100, 100), dtype=np.uint8)
+    img[:, :50] = 200  # left half bright, right half dark
+    result = analyze_symmetry(img)
+    assert result["vertical"] < 0.25, (
+        f"Left/right-split image should have low vertical (L-R) symmetry, "
+        f"got {result['vertical']:.3f}"
+    )
+    assert result["horizontal"] > 0.95, (
+        f"Left/right-split image should have high horizontal (T-B) symmetry, "
+        f"got {result['horizontal']:.3f}"
+    )
+    assert result["dominant_axis"] == "horizontal"
+
+
+def test_symmetry_horizontal_axis_means_top_bottom_mirror() -> None:
+    """'horizontal' means the axis runs horizontally, i.e. top-bottom mirror.
+    A top-bright / bottom-dark image must have LOW horizontal score."""
+    img = np.zeros((100, 100), dtype=np.uint8)
+    img[:50, :] = 200  # top half bright, bottom half dark
+    result = analyze_symmetry(img)
+    assert result["horizontal"] < 0.25, (
+        f"Top/bottom-split image should have low horizontal (T-B) symmetry, "
+        f"got {result['horizontal']:.3f}"
+    )
+    assert result["vertical"] > 0.95, (
+        f"Top/bottom-split image should have high vertical (L-R) symmetry, "
+        f"got {result['vertical']:.3f}"
+    )
+    assert result["dominant_axis"] == "vertical"
+
+
+def test_symmetry_reports_both_scores() -> None:
+    """Both vertical and horizontal scores must always be present in the output,
+    even when one is clearly dominant — they're both used in the frontend."""
+    result = analyze_symmetry(_blank())
+    assert "vertical" in result
+    assert "horizontal" in result
+    assert "dominant_axis" in result
+    assert result["dominant_axis"] in {"vertical", "horizontal"}

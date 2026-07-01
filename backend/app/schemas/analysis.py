@@ -86,12 +86,20 @@ class Point(BaseModel):
     y: float
 
 
+class BoundingBox(BaseModel):
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+
 class RuleOfThirds(BaseModel):
     score: float
     follows_rule: bool
     centroid: Point
     nearest_power_point: Point
     distance_to_power_point: float
+    source: str = "saliency"
 
 
 class LineSegment(BaseModel):
@@ -127,6 +135,11 @@ class SubjectPosition(BaseModel):
     centroid: Point
     region: str
     offset_from_center: float
+    bbox: BoundingBox | None = None
+    label: str | None = None
+    confidence: float = 0.0
+    has_mask: bool = False
+    source: str = "saliency"
 
 
 class EdgeRegions(BaseModel):
@@ -145,6 +158,7 @@ class EdgeDensity(BaseModel):
 
 class NegativeSpace(BaseModel):
     negative_space_ratio: float
+    subject_excluded_ratio: float
     has_significant_negative_space: bool
 
 

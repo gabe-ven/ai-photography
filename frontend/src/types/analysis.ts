@@ -74,12 +74,45 @@ export interface Point {
   y: number;
 }
 
+export interface BoundingBox {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+export type SubjectSource = "detector" | "saliency" | "vlm";
+
+/**
+ * Maps a SubjectSource to a human-readable display label.
+ *
+ * The never check in the default branch makes TypeScript flag this function
+ * as a compile error whenever a new SubjectSource variant is added without
+ * a corresponding case — use this (or the same pattern) in any component
+ * that switches on source, so regressions are caught at build time.
+ */
+export function subjectSourceLabel(source: SubjectSource): string {
+  switch (source) {
+    case "detector":
+      return "Object Detector";
+    case "saliency":
+      return "Saliency Fallback";
+    case "vlm":
+      return "VLM";
+    default: {
+      const _exhaustive: never = source;
+      return _exhaustive;
+    }
+  }
+}
+
 export interface RuleOfThirds {
   score: number;
   follows_rule: boolean;
   centroid: Point;
   nearest_power_point: Point;
   distance_to_power_point: number;
+  source: SubjectSource;
 }
 
 export interface LineSegment {
@@ -115,6 +148,11 @@ export interface SubjectPosition {
   centroid: Point;
   region: string;
   offset_from_center: number;
+  bbox: BoundingBox | null;
+  label: string | null;
+  confidence: number;
+  has_mask: boolean;
+  source: SubjectSource;
 }
 
 export interface EdgeRegions {
@@ -133,6 +171,7 @@ export interface EdgeDensity {
 
 export interface NegativeSpace {
   negative_space_ratio: number;
+  subject_excluded_ratio: number;
   has_significant_negative_space: boolean;
 }
 

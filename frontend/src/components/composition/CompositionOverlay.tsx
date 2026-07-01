@@ -90,6 +90,8 @@ export function CompositionOverlay({
                 width={dims.width}
                 height={dims.height}
                 centroid={composition.subject_position.centroid}
+                bbox={composition.subject_position.bbox}
+                label={composition.subject_position.label}
               />
             )}
           </AnimatePresence>

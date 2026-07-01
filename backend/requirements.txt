@@ -6,3 +6,29 @@ pydantic-settings==2.7.1
 pillow==11.1.0
 opencv-python-headless==4.11.0.86
 numpy==2.2.1
+
+# Subject localization (open-vocab detection + segmentation refinement).
+# Heavy: ultralytics pulls in torch and downloads YOLO-World weights on first
+# use. The composition pipeline degrades gracefully to the saliency centroid
+# when these are unavailable, so tests/CI run without weights or a GPU.
+#
+# Version notes:
+# - ultralytics >=8.4 drops the legacy `numpy<2` cap, so it coexists with the
+#   numpy 2.x pin above (8.3.x forces numpy<2 and conflicts).
+# - torch/torchvision are pinned as a matched pair; CLIP depends on an
+#   unpinned torchvision and will otherwise pull a build that expects a newer
+#   torch than we install.
+# - YOLO-World's open-vocab head scores boxes against text prompts via CLIP,
+#   so `model.set_classes(...)` requires the CLIP package below. Without it,
+#   ultralytics raises `ModuleNotFoundError: No module named 'clip'` and the
+#   pipeline falls back to the saliency centroid.
+torch==2.6.0
+torchvision==0.21.0
+ultralytics==8.4.83
+clip @ git+https://github.com/ultralytics/CLIP.git
+
+# VLM subject-localization escalation tier (backend/app/services/composition/
+# subject_localization.py: VLMSubjectLocator). Only used when
+# ANTHROPIC_API_KEY is set; silently skipped otherwise, so it never blocks
+# tests/CI without a key.
+anthropic==0.115.0

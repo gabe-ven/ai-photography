@@ -13,10 +13,15 @@ node_modules/
 dist/
 .vite/
 *.local
+*.tsbuildinfo
 
 # Uploads / generated artifacts
 backend/uploads/
 backend/tmp/
+
+# Downloaded model weights (auto-fetched by ultralytics on first use — too
+# large for git, exceeds GitHub's 100MB file limit)
+*.pt
 
 # OS / editor
 .DS_Store

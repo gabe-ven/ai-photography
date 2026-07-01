@@ -41,6 +41,28 @@ def canny_edges(gray_u8: np.ndarray) -> np.ndarray:
     return cv2.Canny(gray_u8, 50, 150)
 
 
+def canny_edges_structural(gray_u8: np.ndarray) -> np.ndarray:
+    """Canny edge map tuned for structural lines rather than texture.
+
+    Applies a moderate Gaussian blur to suppress high-frequency texture
+    (stone, fabric, foliage) before edge detection, so long structural
+    edges (building outlines, horizon, converging lines) dominate the
+    Hough accumulator instead of being outvoted by texture noise.
+    Uses adaptive thresholds derived from the image median so the detector
+    works consistently across differently-exposed photos.
+    """
+    blurred = cv2.GaussianBlur(gray_u8, (7, 7), 0)
+    v = float(np.median(blurred))
+    sigma = 0.33
+    lower = int(max(0, (1.0 - sigma) * v))
+    upper = int(min(255, (1.0 + sigma) * v))
+    # Ensure a minimum spread so flat/foggy images don't collapse to zero edges.
+    if upper - lower < 20:
+        lower = max(0, int(v * 0.5))
+        upper = min(255, int(v * 1.5))
+    return cv2.Canny(blurred, lower, upper)
+
+
 def saliency_centroid(gray_u8: np.ndarray) -> tuple[float, float]:
     """Normalized (x, y) center of mass of gradient energy.
 

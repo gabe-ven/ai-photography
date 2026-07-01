@@ -18,9 +18,23 @@ from app.services.vision.histogram import compute_histogram
 from app.services.vision.sharpness import compute_sharpness
 
 
+# Cap the long edge for all pixel-level metrics. All outputs are normalized
+# or scale-independent (histograms, brightness, sharpness, k-means colors),
+# so full resolution adds no accuracy — only runtime cost on large camera files.
+_VISION_MAX_EDGE = 1920
+
+
 def run_vision_analysis(image: Image.Image) -> dict:
+    # Preserve original dimensions for the reported metadata, then downsample.
+    orig_w, orig_h = image.size
+    if max(orig_w, orig_h) > _VISION_MAX_EDGE:
+        scale = _VISION_MAX_EDGE / max(orig_w, orig_h)
+        image = image.resize(
+            (max(1, int(orig_w * scale)), max(1, int(orig_h * scale))),
+            Image.LANCZOS,
+        )
+
     rgb = np.asarray(image.convert("RGB"))
-    height, width = int(rgb.shape[0]), int(rgb.shape[1])
 
     return {
         "brightness": compute_brightness(rgb),
@@ -30,11 +44,11 @@ def run_vision_analysis(image: Image.Image) -> dict:
         "histogram": compute_histogram(rgb),
         "dynamic_range": compute_dynamic_range(rgb),
         "dimensions": {
-            "width": width,
-            "height": height,
-            "aspect_ratio": round(width / height, 2) if height else 0.0,
+            "width": orig_w,
+            "height": orig_h,
+            "aspect_ratio": round(orig_w / orig_h, 2) if orig_h else 0.0,
         },
-        "orientation": _orientation(width, height),
+        "orientation": _orientation(orig_w, orig_h),
     }
 
 
