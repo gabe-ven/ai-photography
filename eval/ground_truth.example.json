@@ -1,0 +1,43 @@
+{
+  "_README": "Copy this file to ground_truth.json and fill in real entries keyed by photo filename (as it appears in eval/photos/). Every field is OPTIONAL — only include the axes you have a confident judgment about for that photo. Omitted fields are skipped, not scored as failures.",
+
+  "_schema": {
+    "on_power_point": "bool — does the main subject sit near a rule-of-thirds intersection?",
+    "has_leading_lines": "bool — are there real compositional leading lines (not texture/foliage clutter)?",
+    "expected_dominant_angle_deg": "number, optional — the real line's angle in degrees [0,180). Catches 'right boolean, wrong reason' (e.g. detector says True because it found foliage clutter, not your actual staircase/architecture line).",
+    "angle_tolerance_deg": "number, optional, default 20 — how close actual dominant_angle must be to count as a match",
+    "is_symmetric": "bool — would a human call this photo symmetric (mirror-like)?",
+    "dominant_axis": "'vertical' | 'horizontal' — only checked if is_symmetric is true. 'vertical' = left/right mirror, 'horizontal' = top/bottom mirror.",
+    "has_horizon": "bool — is there a visible horizon line in the frame?",
+    "has_significant_negative_space": "bool — is there substantial empty/breathing-room space around the subject?",
+    "expected_region": "'center' | 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' — where YOU judge the subject to sit in a 3x3 grid"
+  },
+
+  "tower_strait_up.jpg": {
+    "on_power_point": false,
+    "has_leading_lines": false,
+    "is_symmetric": true,
+    "dominant_axis": "vertical",
+    "has_horizon": false,
+    "has_significant_negative_space": true,
+    "expected_region": "center"
+  },
+
+  "whale_sculpture_stairs.jpg": {
+    "has_leading_lines": true,
+    "is_symmetric": false,
+    "has_horizon": false,
+    "has_significant_negative_space": true,
+    "expected_region": "center"
+  },
+
+  "campanile_trees.jpg": {
+    "has_leading_lines": true,
+    "expected_dominant_angle_deg": 25,
+    "angle_tolerance_deg": 20,
+    "is_symmetric": false,
+    "has_horizon": false,
+    "has_significant_negative_space": false,
+    "expected_region": "center"
+  }
+}

@@ -19,6 +19,12 @@ dist/
 backend/uploads/
 backend/tmp/
 
+# Eval harness: real photos and personal ground-truth judgments stay local.
+# The harness (eval/run_eval.py) and schema (eval/ground_truth.example.json)
+# ARE committed.
+eval/photos/
+eval/ground_truth.json
+
 # Downloaded model weights (auto-fetched by ultralytics on first use — too
 # large for git, exceeds GitHub's 100MB file limit)
 *.pt
