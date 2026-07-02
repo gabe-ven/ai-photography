@@ -70,10 +70,15 @@ function buildMetrics(c: CompositionInfo): MetricDef[] {
       key: "negative-space",
       label: "Negative Space",
       icon: <SpaceIcon />,
-      value: `${Math.round(ns.negative_space_ratio * 100)}%`,
-      explanation: ns.has_significant_negative_space
-        ? "Plenty of breathing room."
-        : "Densely filled frame.",
+      // subject_excluded_ratio measures empty space *around* the subject —
+      // the photographic definition. The raw ratio (shown in the explanation)
+      // also counts the subject's own flat areas.
+      value: `${Math.round(ns.subject_excluded_ratio * 100)}%`,
+      explanation: `${
+        ns.has_significant_negative_space
+          ? "Plenty of breathing room"
+          : "Densely filled frame"
+      } (${Math.round(ns.negative_space_ratio * 100)}% incl. subject).`,
       status: ns.has_significant_negative_space ? "good" : "neutral",
     },
     {

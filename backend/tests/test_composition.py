@@ -51,6 +51,34 @@ def test_rule_of_thirds_centered_subject_fails() -> None:
     assert result["score"] < 0.3
 
 
+def test_rule_of_thirds_subject_exactly_on_power_point_scores_full() -> None:
+    """A centroid placed exactly on a power point is distance 0 -> score ~1."""
+    subject = Subject.from_saliency((1 / 3, 1 / 3))
+    result = analyze_rule_of_thirds(_blank(), subject)
+    assert result["score"] > 0.99
+    assert result["follows_rule"] is True
+    assert result["distance_to_power_point"] < 0.001
+
+
+def test_rule_of_thirds_subject_exactly_centered_scores_zero() -> None:
+    """Dead center is exactly _CENTER_DISTANCE from every power point -> ~0."""
+    subject = Subject.from_saliency((0.5, 0.5))
+    result = analyze_rule_of_thirds(_blank(), subject)
+    assert result["score"] < 0.01
+    assert result["follows_rule"] is False
+
+
+def test_rule_of_thirds_subject_at_corner_clamps_low() -> None:
+    """A frame corner is farther from a power point than the center is; the
+    raw formula goes negative there and must clamp to 0, not crash or return
+    a negative score."""
+    subject = Subject.from_saliency((0.0, 0.0))
+    result = analyze_rule_of_thirds(_blank(), subject)
+    assert result["score"] == 0.0
+    assert 0.0 <= result["score"] <= 1.0
+    assert result["follows_rule"] is False
+
+
 # --- leading lines --------------------------------------------------------
 
 
@@ -83,6 +111,25 @@ def test_horizon_detects_horizontal_edge() -> None:
 
 def test_horizon_blank_not_detected() -> None:
     assert detect_horizon(_blank())["horizon_detected"] is False
+
+
+def test_horizon_detects_boundary_partway_down() -> None:
+    """A sharp horizontal boundary at 70% height must be detected near there."""
+    img = _blank()
+    img[70:, :] = 255
+    result = detect_horizon(img)
+    assert result["horizon_detected"] is True
+    assert abs(result["horizon_y"] - 0.7) < 0.05
+    assert result["is_level"] is True
+
+
+def test_horizon_uniform_noisy_image_no_false_positive() -> None:
+    """A uniform-tone image with mild sensor-like noise has no horizon; the
+    row-energy peak must not clear the strength threshold on noise alone."""
+    rng = np.random.default_rng(3)
+    img = rng.integers(118, 138, size=(100, 100), dtype=np.uint8)
+    result = detect_horizon(img)
+    assert result["horizon_detected"] is False
 
 
 # --- symmetry -------------------------------------------------------------
@@ -125,6 +172,29 @@ def test_subject_position_center() -> None:
     assert result["offset_from_center"] < 0.1
 
 
+def test_subject_position_all_nine_regions() -> None:
+    """Exact centroids in each cell of the 3x3 grid must map to the right
+    region label. Uses Subject.from_saliency so the centroid is exact,
+    not derived from image content."""
+    cases = [
+        ((0.15, 0.15), "top-left"),
+        ((0.50, 0.15), "top-center"),
+        ((0.85, 0.15), "top-right"),
+        ((0.15, 0.50), "middle-left"),
+        ((0.50, 0.50), "center"),
+        ((0.85, 0.50), "middle-right"),
+        ((0.15, 0.85), "bottom-left"),
+        ((0.50, 0.85), "bottom-center"),
+        ((0.85, 0.85), "bottom-right"),
+    ]
+    for centroid, expected in cases:
+        subject = Subject.from_saliency(centroid)
+        result = estimate_subject_position(_blank(), subject)
+        assert result["region"] == expected, (
+            f"centroid {centroid}: expected {expected!r}, got {result['region']!r}"
+        )
+
+
 # --- edge density ---------------------------------------------------------
 
 
@@ -161,6 +231,30 @@ def test_edge_density_regions_tiny_image_no_crash() -> None:
     assert set(regions) == {"top", "bottom", "left", "right", "center"}
     for value in regions.values():
         assert 0.0 <= value <= 1.0
+
+
+def test_edge_density_flat_image_zero_everywhere() -> None:
+    """A fully flat (non-zero tone) image has no edges anywhere: overall
+    density and every region must be exactly 0."""
+    flat = np.full((90, 90), 128, dtype=np.uint8)
+    result = compute_edge_density(flat)
+    assert result["edge_density"] == 0.0
+    for name, value in result["regions"].items():
+        assert value == 0.0, f"region {name} expected 0.0, got {value}"
+
+
+def test_edge_density_patch_confined_to_bottom_right() -> None:
+    """Texture confined to the bottom-right corner must show up in the bottom
+    and right regions only — top and left stay at exactly 0."""
+    img = _blank(size=90)
+    img[60:, 60:] = _checkerboard(size=30, cell=3)
+    regions = compute_edge_density(img)["regions"]
+    assert regions["top"] == 0.0
+    assert regions["left"] == 0.0
+    assert regions["bottom"] > 0.05
+    assert regions["right"] > 0.05
+    assert regions["bottom"] > regions["top"]
+    assert regions["right"] > regions["left"]
 
 
 # --- negative space -------------------------------------------------------
@@ -597,6 +691,45 @@ def test_leading_lines_longest_first() -> None:
         )
 
 
+def test_leading_lines_merges_collinear_fragments() -> None:
+    """A real long line plus nearby collinear-ish short fragments (foliage-like
+    fragmentation of the same edge) must merge into ONE reported line, not
+    count each fragment individually."""
+    img = np.zeros((200, 200), dtype=np.uint8)
+    # The real edge: long horizontal line.
+    cv2.line(img, (20, 100), (180, 100), 255, 2)
+    # Fragments of "the same edge": short, same angle, 8px perpendicular
+    # offset (within the 15px merge window).
+    cv2.line(img, (30, 108), (65, 108), 255, 2)
+    cv2.line(img, (80, 108), (115, 108), 255, 2)
+    cv2.line(img, (130, 108), (165, 108), 255, 2)
+    result = detect_leading_lines(img)
+    assert result["has_leading_lines"] is True
+    assert result["line_count"] == 1, (
+        f"Collinear fragments should merge into one line, "
+        f"got {result['line_count']}"
+    )
+
+
+def test_leading_lines_rejects_small_region_cluster() -> None:
+    """A dense cluster of segments confined to one small region (texture,
+    bark, leaves) must NOT count as leading lines — real leading lines span
+    a meaningful portion of the frame."""
+    img = np.zeros((400, 400), dtype=np.uint8)
+    # Four segments at spread angles, all inside an ~80x80 region near the
+    # center. Region bbox diagonal ≈ 99px < 20% of frame diagonal (113px).
+    cv2.line(img, (165, 180), (235, 180), 255, 2)  # horizontal
+    cv2.line(img, (200, 165), (200, 235), 255, 2)  # vertical
+    cv2.line(img, (165, 165), (235, 235), 255, 2)  # diagonal
+    cv2.line(img, (165, 235), (235, 165), 255, 2)  # anti-diagonal
+    result = detect_leading_lines(img)
+    assert result["has_leading_lines"] is False, (
+        f"Small-region cluster should be rejected as texture, but got "
+        f"{result['line_count']} lines"
+    )
+    assert result["line_count"] == 0
+
+
 # --- symmetry: axis labeling verification (issue #5) -------------------------
 
 
@@ -633,6 +766,23 @@ def test_symmetry_horizontal_axis_means_top_bottom_mirror() -> None:
         f"got {result['vertical']:.3f}"
     )
     assert result["dominant_axis"] == "vertical"
+
+
+def test_symmetry_similar_tone_different_structure_is_not_symmetric() -> None:
+    """Regression: two halves with similar AVERAGE brightness but totally
+    different structure (e.g. flat sky vs textured stairs) must NOT score
+    as symmetric. The old mean-brightness-diff metric couldn't tell "same
+    average tone" from "actually mirrors" and scored this ~0.9 (falsely
+    'STRONG'); SSIM must score it low."""
+    rng = np.random.default_rng(1)
+    img = np.zeros((120, 120), dtype=np.uint8)
+    img[:60, :] = 150  # flat top half (sky-like)
+    img[60:, :] = rng.integers(100, 200, size=(60, 120), dtype=np.uint8)  # textured bottom, similar avg tone
+    result = analyze_symmetry(img)
+    assert result["horizontal"] < 0.3, (
+        f"Similar-tone/different-structure halves should score LOW on "
+        f"symmetry, got {result['horizontal']:.3f}"
+    )
 
 
 def test_symmetry_reports_both_scores() -> None:

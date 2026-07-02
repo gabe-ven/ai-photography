@@ -7,6 +7,12 @@ pillow==11.1.0
 opencv-python-headless==4.11.0.86
 numpy==2.2.1
 
+# Structural similarity (SSIM) for symmetry.py — mean-brightness-difference
+# can't distinguish "same average tone" from "actually mirrors" (e.g. a flat
+# sky vs. a textured region with the same mean), so it produces false
+# "symmetric" verdicts. SSIM compares local luminance/contrast/structure.
+scikit-image==0.25.0
+
 # Subject localization (open-vocab detection + segmentation refinement).
 # Heavy: ultralytics pulls in torch and downloads YOLO-World weights on first
 # use. The composition pipeline degrades gracefully to the saliency centroid

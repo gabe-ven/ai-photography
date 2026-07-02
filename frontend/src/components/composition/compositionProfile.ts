@@ -60,8 +60,11 @@ export function buildCompositionProfile(c: CompositionInfo): ProfileAxis[] {
   // Symmetry = max(vertical, horizontal) * 100 (strongest axis).
   const symmetry = Math.max(sym.vertical, sym.horizontal) * 100;
 
-  // Negative Space = negative_space_ratio * 100.
-  const negativeSpace = ns.negative_space_ratio * 100;
+  // Negative Space = subject_excluded_ratio * 100 — empty space *around* the
+  // subject. The raw negative_space_ratio also counts the subject's own flat
+  // areas (e.g. a solid-color shirt) as negative space, which is
+  // photographically wrong; the subject-excluded ratio is the honest metric.
+  const negativeSpace = ns.subject_excluded_ratio * 100;
 
   // Horizon Levelness: if detected, penalize tilt up to 10° linearly; else 0.
   // Not applicable when no horizon was detected (portraits, straight-up shots, etc.).

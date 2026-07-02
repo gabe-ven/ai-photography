@@ -32,7 +32,9 @@ export function CompositionScores({
     },
     {
       label: "Negative Space",
-      value: Math.round(composition.negative_space.negative_space_ratio * 100),
+      // Subject-excluded ratio: empty space around the subject, matching
+      // CompositionMetrics and the radar profile.
+      value: Math.round(composition.negative_space.subject_excluded_ratio * 100),
       color: "#34d399",
     },
   ];
