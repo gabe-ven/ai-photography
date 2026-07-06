@@ -2,19 +2,25 @@
 
 Raw HoughLinesP output over-counts on textured regions (foliage, bark):
 one physical edge fragmented by leaf gaps comes back as many short,
-near-duplicate segments. Two post-processing steps keep the metric honest:
+near-duplicate segments. Four post-processing steps keep the metric honest:
 
 1. Merging — segments close in angle AND perpendicular offset are fragments
    of the same edge and are merged into a single line spanning them all.
 2. Spread gate — the merged lines must cover a meaningful portion of the
    frame. A dense cluster confined to one small region is texture, not a
    compositional leading line.
+3. Vanishing-point coherence — real leading lines converge toward a common
+   point; architectural patterns scatter their pairwise intersections
+   uniformly. If lines are mostly parallel (e.g. a pier railing), the VP
+   check is bypassed — those are still valid leading lines.
+4. Length-weighted dominant angle — angle vote weighted by line length so a
+   few long diagonals beat many short horizontal noise segments.
 """
 
 from __future__ import annotations
 
 import math
-from collections import Counter
+from collections import defaultdict
 
 import cv2
 import numpy as np
@@ -31,7 +37,22 @@ _MERGE_OFFSET_PX = 15.0
 
 # Merged lines must span at least this fraction of the frame diagonal
 # (bounding box of all endpoints) to count as leading lines at all.
-_MIN_SPREAD_FRACTION = 0.20
+_MIN_SPREAD_FRACTION = 0.30
+
+# Require at least this many distinct merged lines to qualify as leading lines.
+# A single edge (however long) is structure, not a compositional element.
+_MIN_LINE_COUNT = 2
+
+# Vanishing-point coherence parameters.
+# Only the longest _VP_MAX_LINES lines are used (keeps cost O(K²)).
+_VP_MAX_LINES = 10
+# Fraction of pairwise intersection points that must fall in the peak grid cell.
+_VP_MIN_CLUSTER_FRACTION = 0.30
+# Grid resolution over the 3×-width × 3×-height extended search region.
+_VP_GRID_CELLS = 20
+# If fewer than this many non-parallel line pairs exist, the lines are
+# essentially parallel and the VP check is bypassed (still valid leading lines).
+_VP_MIN_PAIRS_FOR_CHECK = 3
 
 _NOT_FOUND = {
     "has_leading_lines": False,
@@ -51,7 +72,7 @@ def detect_leading_lines(image: np.ndarray) -> dict:
         edges,
         rho=1,
         theta=np.pi / 180,
-        threshold=30,
+        threshold=25,
         minLineLength=min_length,
         maxLineGap=20,
     )
@@ -82,11 +103,19 @@ def detect_leading_lines(image: np.ndarray) -> dict:
 
     lines = _merge_segments(segments)
 
-    if not _spread_ok(lines, width, height):
+    if len(lines) < _MIN_LINE_COUNT or not _spread_ok(lines, width, height):
         return dict(_NOT_FOUND)
 
-    angles = [int(round(ln["angle"] / 10.0) * 10) % 180 for ln in lines]
-    dominant_bin = Counter(angles).most_common(1)[0][0]
+    if not _vp_coherent(lines, width, height):
+        return dict(_NOT_FOUND)
+
+    # Length-weighted angle vote: long lines carry more weight so a few
+    # strong diagonals beat many short horizontal noise segments.
+    angle_weight: dict[int, float] = defaultdict(float)
+    for ln in lines:
+        bin_ = int(round(ln["angle"] / 10.0) * 10) % 180
+        angle_weight[bin_] += ln["length"]
+    dominant_bin = max(angle_weight, key=angle_weight.__getitem__)
 
     return {
         "has_leading_lines": True,
@@ -94,6 +123,86 @@ def detect_leading_lines(image: np.ndarray) -> dict:
         "dominant_angle": float(dominant_bin),
         "lines": lines[:_MAX_LINES],
     }
+
+
+def _line_intersect(
+    l1: dict, l2: dict
+) -> tuple[float, float] | None:
+    """Return the intersection point of two lines, or None if parallel."""
+    x1, y1, x2, y2 = l1["x1"], l1["y1"], l1["x2"], l1["y2"]
+    x3, y3, x4, y4 = l2["x1"], l2["y1"], l2["x2"], l2["y2"]
+    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if abs(denom) < 1e-6:
+        return None
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+    return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+
+
+def _vp_coherent(lines: list[dict], width: int, height: int) -> bool:
+    """True when the detected lines converge toward a common vanishing point.
+
+    For each non-parallel pair of lines we compute their intersection. If the
+    intersections cluster strongly near a single point (within a grid cell),
+    the lines are genuinely converging — compositional leading lines.
+
+    If too few non-parallel pairs exist (lines are essentially parallel, e.g.
+    a pier railing), we bypass the check and return True: parallel lines
+    spanning the frame are still valid leading lines.
+    """
+    # Use the top K longest lines to keep cost O(K²).
+    candidates = sorted(lines, key=lambda l: l["length"], reverse=True)[
+        :_VP_MAX_LINES
+    ]
+
+    # Search region: the image plus a 1× buffer on each side.
+    gx_min, gx_max = -width, 2 * width
+    gy_min, gy_max = -height, 2 * height
+    cell_w = (gx_max - gx_min) / _VP_GRID_CELLS
+    cell_h = (gy_max - gy_min) / _VP_GRID_CELLS
+
+    grid: dict[tuple[int, int], int] = {}
+    n_pairs = 0
+
+    for i in range(len(candidates)):
+        for j in range(i + 1, len(candidates)):
+            # Skip pairs whose angles are too similar — their intersection is
+            # at near-infinity and carries no VP information.
+            if (
+                _angle_diff(candidates[i]["angle"], candidates[j]["angle"])
+                < _MERGE_ANGLE_DEG
+            ):
+                continue
+            pt = _line_intersect(candidates[i], candidates[j])
+            if pt is None:
+                continue
+            ix, iy = pt
+            # Only count intersections inside the extended search region.
+            if not (gx_min <= ix <= gx_max and gy_min <= iy <= gy_max):
+                continue
+            n_pairs += 1
+            bx = min(int((ix - gx_min) / cell_w), _VP_GRID_CELLS - 1)
+            by = min(int((iy - gy_min) / cell_h), _VP_GRID_CELLS - 1)
+            grid[(bx, by)] = grid.get((bx, by), 0) + 1
+
+    # Not enough non-parallel pairs → lines are roughly parallel; valid.
+    if n_pairs < _VP_MIN_PAIRS_FOR_CHECK:
+        return True
+
+    # If one angle direction accounts for the dominant share of total line
+    # length, the photo has a single compositional direction (pier railing,
+    # road lines, railway tracks) — VP convergence doesn't apply.
+    total_len = sum(l["length"] for l in candidates)
+    if total_len > 0:
+        angle_bin_lengths: dict[int, float] = defaultdict(float)
+        for l in candidates:
+            bin_ = int(round(l["angle"] / 20.0) * 20) % 180
+            angle_bin_lengths[bin_] += l["length"]
+        max_bin_len = max(angle_bin_lengths.values(), default=0.0)
+        if max_bin_len >= 0.70 * total_len:
+            return True
+
+    top_bin = max(grid.values()) if grid else 0
+    return top_bin >= _VP_MIN_CLUSTER_FRACTION * n_pairs
 
 
 def _angle_diff(a: float, b: float) -> float:

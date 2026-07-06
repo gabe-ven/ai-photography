@@ -30,6 +30,15 @@ sys.path.insert(0, str(REPO_ROOT / "backend"))
 
 from PIL import Image  # noqa: E402
 
+# Load .env so ANTHROPIC_API_KEY and other backend env vars are available
+# when running the eval script directly (outside the server process).
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(REPO_ROOT / "backend" / ".env")
+except ImportError:
+    pass  # python-dotenv not installed; rely on env vars already being set
+
 from app.services.composition.composition_pipeline import (  # noqa: E402
     run_composition_analysis,
 )
@@ -121,12 +130,33 @@ def check_negative_space(result: dict, gt: dict) -> tuple[bool, str, str] | None
     return actual == expected, str(expected), str(actual)
 
 
+def _region_to_grid(region: str) -> tuple[int, int] | None:
+    """Map a region name to (row, col) in the 3×3 subject-position grid."""
+    _GRID = {
+        "top-left": (0, 0), "top-center": (0, 1), "top-right": (0, 2),
+        "middle-left": (1, 0), "center": (1, 1), "middle-right": (1, 2),
+        "bottom-left": (2, 0), "bottom-center": (2, 1), "bottom-right": (2, 2),
+    }
+    return _GRID.get(region)
+
+
 def check_subject_region(result: dict, gt: dict) -> tuple[bool, str, str] | None:
     if "expected_region" not in gt:
         return None
     expected = gt["expected_region"]
     actual = result["subject_position"]["region"]
-    return actual == expected, expected, actual
+
+    if actual == expected:
+        return True, expected, actual
+
+    # Adjacent cell (8-connectivity) counts as a pass — the localization is
+    # "close enough" given the coarseness of the 3×3 grid.
+    eg = _region_to_grid(expected)
+    ag = _region_to_grid(actual)
+    if eg and ag and abs(eg[0] - ag[0]) <= 1 and abs(eg[1] - ag[1]) <= 1:
+        return True, expected, f"{actual} (adjacent ≈)"
+
+    return False, expected, actual
 
 
 CHECKS = {

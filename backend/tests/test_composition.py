@@ -89,8 +89,12 @@ def test_leading_lines_blank_has_none() -> None:
 
 
 def test_leading_lines_detects_diagonal() -> None:
-    img = _blank()
-    cv2.line(img, (10, 10), (90, 90), 255, 2)
+    # _MIN_LINE_COUNT requires at least 2 distinct merged lines.  Use a 200x200
+    # image with two parallel diagonals separated by >15px perpendicular offset
+    # so they are NOT collapsed by _merge_segments.
+    img = _blank(200)
+    cv2.line(img, (10, 10), (190, 190), 255, 2)   # main diagonal
+    cv2.line(img, (40, 10), (190, 160), 255, 2)   # parallel, ~21px offset
     result = detect_leading_lines(img)
     assert result["has_leading_lines"] is True
     assert result["line_count"] >= 1
@@ -694,19 +698,26 @@ def test_leading_lines_longest_first() -> None:
 def test_leading_lines_merges_collinear_fragments() -> None:
     """A real long line plus nearby collinear-ish short fragments (foliage-like
     fragmentation of the same edge) must merge into ONE reported line, not
-    count each fragment individually."""
+    count each fragment individually.
+
+    A second distinct line at a clearly different angle satisfies _MIN_LINE_COUNT
+    so the detection result is valid to inspect.  The total reported count must
+    be ≤ 2 — the 4 horizontal fragments merged into 1, plus the 1 diagonal = 2.
+    """
     img = np.zeros((200, 200), dtype=np.uint8)
-    # The real edge: long horizontal line.
+    # The real horizontal edge.
     cv2.line(img, (20, 100), (180, 100), 255, 2)
     # Fragments of "the same edge": short, same angle, 8px perpendicular
     # offset (within the 15px merge window).
     cv2.line(img, (30, 108), (65, 108), 255, 2)
     cv2.line(img, (80, 108), (115, 108), 255, 2)
     cv2.line(img, (130, 108), (165, 108), 255, 2)
+    # Second distinct line (diagonal, >10° different) to satisfy _MIN_LINE_COUNT.
+    cv2.line(img, (10, 10), (190, 190), 255, 2)
     result = detect_leading_lines(img)
     assert result["has_leading_lines"] is True
-    assert result["line_count"] == 1, (
-        f"Collinear fragments should merge into one line, "
+    assert result["line_count"] <= 2, (
+        f"Collinear fragments should merge into one line (total ≤ 2 with diagonal), "
         f"got {result['line_count']}"
     )
 
@@ -728,6 +739,40 @@ def test_leading_lines_rejects_small_region_cluster() -> None:
         f"{result['line_count']} lines"
     )
     assert result["line_count"] == 0
+
+
+def test_leading_lines_vp_coherence_converging_pass() -> None:
+    """Lines converging toward a common vanishing point should pass the VP
+    coherence check — this is the prototype of a 'real' leading-line photo."""
+    # Four lines radiating from the right edge (vanishing point at ~(390, 200)).
+    img = _blank(400)
+    cv2.line(img, (10, 50),  (390, 200), 255, 2)   # from top-left → VP
+    cv2.line(img, (10, 150), (390, 200), 255, 2)   # from mid-left  → VP
+    cv2.line(img, (10, 250), (390, 200), 255, 2)   # from mid-left  → VP
+    cv2.line(img, (10, 350), (390, 200), 255, 2)   # from bot-left  → VP
+    result = detect_leading_lines(img)
+    assert result["has_leading_lines"] is True, (
+        "Converging lines sharing a vanishing point must be detected as leading lines"
+    )
+
+
+def test_leading_lines_vp_coherence_chaotic_reject() -> None:
+    """Lines spanning the frame but at scattered, non-converging angles
+    (like a building facade with columns + windows) must be rejected by the
+    VP coherence check even though they pass the spread gate."""
+    # Simulate a building facade: horizontal window lines + vertical columns
+    # spanning the full frame — intersections will be scattered uniformly.
+    img = np.zeros((400, 600), dtype=np.uint8)
+    # Horizontal window rows
+    for y in (60, 130, 200, 270, 340):
+        cv2.line(img, (10, y), (590, y), 255, 2)
+    # Vertical columns
+    for x in (80, 200, 320, 440, 560):
+        cv2.line(img, (x, 10), (x, 390), 255, 2)
+    result = detect_leading_lines(img)
+    assert result["has_leading_lines"] is False, (
+        "Grid-like architectural pattern must be rejected by VP coherence check"
+    )
 
 
 # --- symmetry: axis labeling verification (issue #5) -------------------------
