@@ -229,6 +229,41 @@ export interface CompositionCritique {
   overall: string | null;
 }
 
+export interface SemanticLeadingLines {
+  present: boolean | null;
+  strength: number | null;
+  description: string | null;
+}
+
+export interface SemanticScore {
+  score: number | null;
+  reasoning: string | null;
+}
+
+export interface SemanticComposition {
+  leading_lines: SemanticLeadingLines | null;
+  rule_of_thirds: SemanticScore | null;
+  negative_space: SemanticScore | null;
+}
+
+export interface FujifilmRecipeSettings {
+  grain: string | null;
+  color_chrome_effect: string | null;
+  white_balance: string | null;
+  highlights: number | null;
+  shadows: number | null;
+  color: number | null;
+  sharpness: number | null;
+  noise_reduction: number | null;
+}
+
+export interface FujifilmRecipe {
+  applicable: boolean | null;
+  film_simulation: string | null;
+  settings: FujifilmRecipeSettings | null;
+  reasoning: string | null;
+}
+
 export interface AIAnalysis {
   available: boolean;
   reason: string | null;
@@ -238,6 +273,8 @@ export interface AIAnalysis {
   camera_settings: CameraSettings | null;
   composition_critique: CompositionCritique | null;
   recreation_guide: string[];
+  semantic_composition: SemanticComposition | null;
+  fujifilm_recipe: FujifilmRecipe | null;
 }
 
 export interface AIAnalysisResponse {

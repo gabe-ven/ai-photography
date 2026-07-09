@@ -222,6 +222,48 @@ class CompositionCritique(BaseModel):
     overall: str | None = None
 
 
+class SemanticLeadingLines(BaseModel):
+    present: bool | None = None
+    strength: float | None = None
+    description: str | None = None
+
+
+class SemanticScore(BaseModel):
+    score: float | None = None
+    reasoning: str | None = None
+
+
+class SemanticComposition(BaseModel):
+    """The AI's meaning-aware read of composition. Intentionally replaces the
+    geometric CV scores for these three dimensions."""
+
+    leading_lines: SemanticLeadingLines | None = None
+    rule_of_thirds: SemanticScore | None = None
+    negative_space: SemanticScore | None = None
+
+
+class FujifilmRecipeSettings(BaseModel):
+    grain: str | None = None
+    color_chrome_effect: str | None = None
+    white_balance: str | None = None
+    highlights: float | None = None
+    shadows: float | None = None
+    color: float | None = None
+    sharpness: float | None = None
+    noise_reduction: float | None = None
+
+
+class FujifilmRecipe(BaseModel):
+    """A Fujifilm film-simulation recipe recommendation (Phase 4).
+
+    ``applicable`` is False when the shot was not taken on a Fujifilm body."""
+
+    applicable: bool | None = None
+    film_simulation: str | None = None
+    settings: FujifilmRecipeSettings | None = None
+    reasoning: str | None = None
+
+
 class AIAnalysis(BaseModel):
     """Vision-language interpretation of the photo (Phase 3).
 
@@ -237,6 +279,8 @@ class AIAnalysis(BaseModel):
     camera_settings: CameraSettings | None = None
     composition_critique: CompositionCritique | None = None
     recreation_guide: list[str] = Field(default_factory=list)
+    semantic_composition: SemanticComposition | None = None
+    fujifilm_recipe: FujifilmRecipe | None = None
 
 
 class AIAnalysisResponse(BaseModel):

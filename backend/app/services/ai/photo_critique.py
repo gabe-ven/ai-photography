@@ -28,7 +28,7 @@ from app.services.ai.ai_client import (
 
 logger = logging.getLogger(__name__)
 
-_MAX_TOKENS = 1500
+_MAX_TOKENS = 2200
 
 _JSON_OBJECT_RE = re.compile(r"\{.*\}", re.DOTALL)
 
@@ -71,8 +71,38 @@ _SYSTEM_PROMPT = (
     '    "improvements": ["1-3 concrete, actionable suggestions"],\n'
     '    "overall": "a two to three sentence overall assessment"\n'
     "  },\n"
-    '  "recreation_guide": ["3-6 ordered, practical steps to recreate this shot"]\n'
+    '  "recreation_guide": ["3-6 ordered, practical steps to recreate this shot"],\n'
+    '  "semantic_composition": {\n'
+    '    "leading_lines": {\n'
+    '      "present": true/false,\n'
+    '      "strength": 0-100 (0 when none are present),\n'
+    '      "description": "one sentence — what lines and where they lead"\n'
+    "    },\n"
+    '    "rule_of_thirds": { "score": 0-100, "reasoning": "one sentence" },\n'
+    '    "negative_space": { "score": 0-100, "reasoning": "one sentence" }\n'
+    "  },\n"
+    '  "fujifilm_recipe": {\n'
+    '    "applicable": true/false (false when the EXIF camera make is not Fujifilm, or EXIF is absent),\n'
+    '    "film_simulation": "e.g. Classic Chrome, Eterna, Velvia, Provia, Astia, Acros, Nostalgic Neg",\n'
+    '    "settings": {\n'
+    '      "grain": "e.g. Weak Small / Strong Large / Off",\n'
+    '      "color_chrome_effect": "Off | Weak | Strong",\n'
+    '      "white_balance": "e.g. Auto / Daylight / 5500K, R+1 B-1",\n'
+    '      "highlights": number (Fujifilm tone, typically -2 to +4),\n'
+    '      "shadows": number (typically -2 to +4),\n'
+    '      "color": number (typically -4 to +4),\n'
+    '      "sharpness": number (typically -4 to +4),\n'
+    '      "noise_reduction": number (typically -4 to +4)\n'
+    "    },\n"
+    '    "reasoning": "one sentence — why this recipe fits this scene/light"\n'
+    "  }\n"
     "}\n"
+    "Judge semantic_composition from the image itself — this is your independent, "
+    "meaning-aware read, and it intentionally REPLACES the geometric CV scores for "
+    "leading lines, rule of thirds, and negative space. "
+    "For fujifilm_recipe, recommend a film simulation and in-camera settings that suit "
+    "the scene and light; set applicable to false when the EXIF camera make is not a "
+    "Fujifilm body (including when no EXIF is present), but still provide a usable recipe. "
     "Be specific and practical. Prefer concrete photographic advice over generic praise."
 )
 

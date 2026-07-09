@@ -1,5 +1,10 @@
 import { Section } from "@/components/Section";
-import type { AIAnalysis, CameraSettings } from "@/types/analysis";
+import type {
+  AIAnalysis,
+  CameraSettings,
+  FujifilmRecipe,
+  SemanticComposition,
+} from "@/types/analysis";
 
 interface AICritiqueDashboardProps {
   ai: AIAnalysis | null;
@@ -129,6 +134,10 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
         </div>
       )}
 
+      {ai.semantic_composition && (
+        <SemanticCompositionSection semantic={ai.semantic_composition} />
+      )}
+
       {ai.recreation_guide.length > 0 && (
         <div>
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
@@ -145,6 +154,10 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
             ))}
           </ol>
         </div>
+      )}
+
+      {ai.fujifilm_recipe?.applicable === true && (
+        <FujifilmRecipeCard recipe={ai.fujifilm_recipe} />
       )}
     </div>
   );
@@ -191,6 +204,146 @@ function CameraSettingsCard({ settings }: { settings: CameraSettings }) {
       {settings.reasoning && (
         <p className="mt-3 text-sm leading-relaxed text-neutral-400">
           {settings.reasoning}
+        </p>
+      )}
+    </InfoCard>
+  );
+}
+
+function SemanticCompositionSection({
+  semantic,
+}: {
+  semantic: SemanticComposition;
+}) {
+  const ll = semantic.leading_lines;
+  const rot = semantic.rule_of_thirds;
+  const ns = semantic.negative_space;
+
+  if (!ll && !rot && !ns) return null;
+
+  return (
+    <div>
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+        AI Composition Read
+      </h3>
+      <div className="grid gap-4 lg:grid-cols-3">
+        {ll && (
+          <InfoCard title="Leading Lines">
+            <div className="mb-2">
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  ll.present
+                    ? "bg-emerald-500/15 text-emerald-300"
+                    : "bg-neutral-700/50 text-neutral-400"
+                }`}
+              >
+                {ll.present ? "Detected" : "None"}
+              </span>
+            </div>
+            {ll.present && ll.strength != null && <ScoreBar value={ll.strength} />}
+            {ll.description && (
+              <p className="mt-2 text-sm leading-relaxed text-neutral-400">
+                {ll.description}
+              </p>
+            )}
+          </InfoCard>
+        )}
+        {rot && (
+          <InfoCard title="Rule of Thirds">
+            {rot.score != null && <ScoreBar value={rot.score} />}
+            {rot.reasoning && (
+              <p className="mt-2 text-sm leading-relaxed text-neutral-400">
+                {rot.reasoning}
+              </p>
+            )}
+          </InfoCard>
+        )}
+        {ns && (
+          <InfoCard title="Negative Space">
+            {ns.score != null && <ScoreBar value={ns.score} />}
+            {ns.reasoning && (
+              <p className="mt-2 text-sm leading-relaxed text-neutral-400">
+                {ns.reasoning}
+              </p>
+            )}
+          </InfoCard>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ScoreBar({ value }: { value: number }) {
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between">
+        <span className="font-mono text-lg text-neutral-100">{pct}</span>
+        <span className="text-xs text-neutral-500">/ 100</span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
+        <div
+          className="h-full rounded-full bg-emerald-400"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function FujifilmRecipeCard({ recipe }: { recipe: FujifilmRecipe }) {
+  const s = recipe.settings;
+  const textRows: Array<[string, string | null | undefined]> = [
+    ["Grain", s?.grain],
+    ["Color Chrome Effect", s?.color_chrome_effect],
+    ["White Balance", s?.white_balance],
+  ];
+  const numRows: Array<[string, number | null | undefined]> = [
+    ["Highlights", s?.highlights],
+    ["Shadows", s?.shadows],
+    ["Color", s?.color],
+    ["Sharpness", s?.sharpness],
+    ["Noise Reduction", s?.noise_reduction],
+  ];
+
+  return (
+    <InfoCard title="Fujifilm Recipe">
+      {recipe.film_simulation && (
+        <div className="mb-3">
+          <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
+            {recipe.film_simulation}
+          </span>
+        </div>
+      )}
+      <div className="space-y-1.5">
+        {textRows.map(([label, value]) =>
+          value ? (
+            <div
+              key={label}
+              className="flex items-center justify-between gap-3 text-sm"
+            >
+              <span className="text-neutral-500">{label}</span>
+              <span className="text-neutral-200">{value}</span>
+            </div>
+          ) : null,
+        )}
+        {numRows.map(([label, value]) =>
+          value != null ? (
+            <div
+              key={label}
+              className="flex items-center justify-between gap-3 text-sm"
+            >
+              <span className="text-neutral-500">{label}</span>
+              <span className="font-mono text-neutral-200">
+                {value > 0 ? `+${value}` : `${value}`}
+              </span>
+            </div>
+          ) : null,
+        )}
+      </div>
+      {recipe.reasoning && (
+        <p className="mt-3 text-sm italic leading-relaxed text-neutral-400">
+          {recipe.reasoning}
         </p>
       )}
     </InfoCard>
