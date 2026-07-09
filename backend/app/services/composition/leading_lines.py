@@ -1,20 +1,25 @@
-"""Leading lines via the probabilistic Hough line transform.
+"""Leading lines via the Line Segment Detector (LSD).
 
-Raw HoughLinesP output over-counts on textured regions (foliage, bark):
-one physical edge fragmented by leaf gaps comes back as many short,
-near-duplicate segments. Four post-processing steps keep the metric honest:
+LSD (cv2.createLineSegmentDetector) yields cleaner, longer, less noisy
+segments than the probabilistic Hough transform, which fragments a single
+physical edge into many short near-duplicates across textured regions. If LSD
+is unavailable in the installed OpenCV build (it has been patent-gated in some
+releases) or construction fails, we silently fall back to HoughLinesP.
 
-1. Merging — segments close in angle AND perpendicular offset are fragments
-   of the same edge and are merged into a single line spanning them all.
-2. Spread gate — the merged lines must cover a meaningful portion of the
-   frame. A dense cluster confined to one small region is texture, not a
-   compositional leading line.
-3. Vanishing-point coherence — real leading lines converge toward a common
-   point; architectural patterns scatter their pairwise intersections
-   uniformly. If lines are mostly parallel (e.g. a pier railing), the VP
-   check is bypassed — those are still valid leading lines.
-4. Length-weighted dominant angle — angle vote weighted by line length so a
-   few long diagonals beat many short horizontal noise segments.
+A detected segment counts as a leading line only if it survives three filters:
+
+1. Length — at least 20% of the frame diagonal (kills texture noise).
+2. Angle  — more than 15 degrees from horizontal (near-horizontal edges are
+   horizon candidates, handled by horizon_detection; not leading lines).
+3. Edge   — it enters the frame from a border: an endpoint sits within 10% of
+   a frame edge, or the segment's infinite extension crosses a frame edge.
+
+Among the survivors we measure convergence toward the subject: a line "leads to
+the subject" when its infinite extension passes within 15% of the frame
+diagonal of the subject centroid (subject.centroid when available, else the
+frame center (0.5, 0.5)). The photo has leading lines when at least one
+survivor converges; the convergence fraction (passing / surviving) is the
+internal strength signal that drives has_leading_lines.
 """
 
 from __future__ import annotations
@@ -26,33 +31,22 @@ import cv2
 import numpy as np
 
 from app.services.composition._utils import canny_edges_structural, to_gray_u8
+from app.services.composition.subject import Subject
 
+# Cap on how many segments we hand back to the overlay renderer.
 _MAX_LINES = 20
 
-# Segments whose angle differs by no more than this AND whose perpendicular
-# offset from a cluster's representative line is no more than this are
-# considered fragments of the same physical edge.
-_MERGE_ANGLE_DEG = 10.0
-_MERGE_OFFSET_PX = 15.0
-
-# Merged lines must span at least this fraction of the frame diagonal
-# (bounding box of all endpoints) to count as leading lines at all.
-_MIN_SPREAD_FRACTION = 0.30
-
-# Require at least this many distinct merged lines to qualify as leading lines.
-# A single edge (however long) is structure, not a compositional element.
-_MIN_LINE_COUNT = 2
-
-# Vanishing-point coherence parameters.
-# Only the longest _VP_MAX_LINES lines are used (keeps cost O(K²)).
-_VP_MAX_LINES = 10
-# Fraction of pairwise intersection points that must fall in the peak grid cell.
-_VP_MIN_CLUSTER_FRACTION = 0.30
-# Grid resolution over the 3×-width × 3×-height extended search region.
-_VP_GRID_CELLS = 20
-# If fewer than this many non-parallel line pairs exist, the lines are
-# essentially parallel and the VP check is bypassed (still valid leading lines).
-_VP_MIN_PAIRS_FOR_CHECK = 3
+# --- Filter thresholds -----------------------------------------------------
+# Minimum segment length as a fraction of the frame diagonal.
+_MIN_LENGTH_FRACTION = 0.20
+# Minimum angle from horizontal (degrees). At/below this a line is a horizon
+# candidate, not a leading line.
+_MIN_ANGLE_FROM_HORIZONTAL = 15.0
+# An endpoint within this fraction of any edge (per axis) counts as touching it.
+_EDGE_MARGIN_FRACTION = 0.10
+# A line's extension within this fraction of the frame diagonal of the subject
+# centroid counts as "leading to the subject".
+_CONVERGENCE_FRACTION = 0.15
 
 _NOT_FOUND = {
     "has_leading_lines": False,
@@ -62,11 +56,82 @@ _NOT_FOUND = {
 }
 
 
-def detect_leading_lines(image: np.ndarray) -> dict:
+def detect_leading_lines(image: np.ndarray, subject: Subject | None = None) -> dict:
     gray = to_gray_u8(image)
     height, width = gray.shape
-    edges = canny_edges_structural(gray)
+    frame_diagonal = math.hypot(width, height)
+    if frame_diagonal == 0:
+        return dict(_NOT_FOUND)
 
+    # 1. Detect segments — LSD first, Hough as a silent fallback.
+    raw = _detect_lsd(gray)
+    if raw is None:
+        raw = _detect_hough(gray, height, width)
+    if not raw:
+        return dict(_NOT_FOUND)
+
+    segments = [_segment(x1, y1, x2, y2) for (x1, y1, x2, y2) in raw]
+
+    # 2. Geometry filters: length, angle-from-horizontal, edge entry.
+    survivors = [
+        s for s in segments if _passes_filters(s, width, height, frame_diagonal)
+    ]
+    if not survivors:
+        return dict(_NOT_FOUND)
+    survivors.sort(key=lambda s: s["length"], reverse=True)
+
+    # 3. Convergence toward the subject centroid (normalized -> pixels).
+    cx, cy = subject.centroid if subject is not None else (0.5, 0.5)
+    centroid_x, centroid_y = cx * width, cy * height
+    converge_threshold = _CONVERGENCE_FRACTION * frame_diagonal
+    passing = sum(
+        1
+        for s in survivors
+        if _point_to_line_distance(
+            centroid_x, centroid_y, s["x1"], s["y1"], s["x2"], s["y2"]
+        )
+        <= converge_threshold
+    )
+
+    # A photo "has leading lines" only when at least one surviving line actually
+    # leads toward the subject. Lines that clear the geometry filters but ignore
+    # the subject are structure, not composition. (convergence = passing/total.)
+    if passing == 0:
+        return dict(_NOT_FOUND)
+
+    return {
+        "has_leading_lines": True,
+        "line_count": len(survivors),
+        "dominant_angle": _dominant_angle(survivors),
+        "lines": survivors[:_MAX_LINES],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Detection backends
+# ---------------------------------------------------------------------------
+
+
+def _detect_lsd(gray: np.ndarray) -> list[tuple[float, float, float, float]] | None:
+    """Detect line segments with LSD. Returns None if LSD is unavailable."""
+    try:
+        lsd = cv2.createLineSegmentDetector()
+        detected = lsd.detect(gray)
+    except Exception:  # noqa: BLE001 - any LSD failure -> fall back to Hough
+        return None
+
+    # detect() returns (lines, width, prec, nfa); lines is (N, 1, 4) or None.
+    lines = detected[0] if isinstance(detected, tuple) else detected
+    if lines is None or len(lines) == 0:
+        return None
+    return [tuple(float(v) for v in ln[0]) for ln in lines]
+
+
+def _detect_hough(
+    gray: np.ndarray, height: int, width: int
+) -> list[tuple[float, float, float, float]] | None:
+    """Silent fallback: probabilistic Hough transform over structural edges."""
+    edges = canny_edges_structural(gray)
     min_length = max(10.0, 0.15 * min(height, width))
     raw = cv2.HoughLinesP(
         edges,
@@ -76,191 +141,81 @@ def detect_leading_lines(image: np.ndarray) -> dict:
         minLineLength=min_length,
         maxLineGap=20,
     )
-
     if raw is None:
-        return dict(_NOT_FOUND)
+        return None
+    return [tuple(float(v) for v in seg) for seg in raw[:, 0, :]]
 
-    segments: list[dict] = []
-    for x1, y1, x2, y2 in raw[:, 0, :]:
-        angle = math.degrees(math.atan2(int(y2) - int(y1), int(x2) - int(x1)))
-        # Normalize to [0, 180) — direction doesn't matter for a line.
-        angle = angle % 180
-        length = math.hypot(int(x2) - int(x1), int(y2) - int(y1))
-        segments.append(
-            {
-                "x1": int(x1),
-                "y1": int(y1),
-                "x2": int(x2),
-                "y2": int(y2),
-                "angle": round(angle, 1),
-                "length": round(length, 1),
-            }
-        )
 
-    # Longest first so the longest fragment of each edge becomes the cluster
-    # representative, and so the final list is sorted by significance.
-    segments.sort(key=lambda ln: ln["length"], reverse=True)
+# ---------------------------------------------------------------------------
+# Segment construction + filters
+# ---------------------------------------------------------------------------
 
-    lines = _merge_segments(segments)
 
-    if len(lines) < _MIN_LINE_COUNT or not _spread_ok(lines, width, height):
-        return dict(_NOT_FOUND)
-
-    if not _vp_coherent(lines, width, height):
-        return dict(_NOT_FOUND)
-
-    # Length-weighted angle vote: long lines carry more weight so a few
-    # strong diagonals beat many short horizontal noise segments.
-    #
-    # When near-horizontal lines (within 20° of 0°) are a minority of the total
-    # line length (< 40%), they are incidental structural background elements
-    # (building floors, sky/ground boundaries) rather than the compositional
-    # leading lines.  Exclude them from the angle vote so a diagonal or vertical
-    # leading line is not masked by background horizontal edges.  When horizontal
-    # lines ARE dominant (≥ 40%), they are the intended compositional direction
-    # (pier receding to horizon, road surface) and must stay in the vote.
-    total_len_all = sum(ln["length"] for ln in lines)
-    horiz_len = sum(
-        ln["length"] for ln in lines if _angle_diff(ln["angle"], 0.0) <= 20
-    )
-    vote_lines = lines
-    if total_len_all > 0 and horiz_len / total_len_all < 0.40:
-        non_horiz = [ln for ln in lines if _angle_diff(ln["angle"], 0.0) > 20]
-        if non_horiz:
-            vote_lines = non_horiz
-
-    angle_weight: dict[int, float] = defaultdict(float)
-    for ln in vote_lines:
-        bin_ = int(round(ln["angle"] / 10.0) * 10) % 180
-        angle_weight[bin_] += ln["length"]
-    dominant_bin = max(angle_weight, key=angle_weight.__getitem__)
-
+def _segment(x1: float, y1: float, x2: float, y2: float) -> dict:
+    ix1, iy1, ix2, iy2 = (int(round(v)) for v in (x1, y1, x2, y2))
+    angle = math.degrees(math.atan2(iy2 - iy1, ix2 - ix1)) % 180
+    length = math.hypot(ix2 - ix1, iy2 - iy1)
     return {
-        "has_leading_lines": True,
-        "line_count": len(lines),
-        "dominant_angle": float(dominant_bin),
-        "lines": lines[:_MAX_LINES],
+        "x1": ix1,
+        "y1": iy1,
+        "x2": ix2,
+        "y2": iy2,
+        "angle": round(angle, 1),
+        "length": round(length, 1),
     }
 
 
-def _line_intersect(
-    l1: dict, l2: dict
-) -> tuple[float, float] | None:
-    """Return the intersection point of two lines, or None if parallel."""
-    x1, y1, x2, y2 = l1["x1"], l1["y1"], l1["x2"], l1["y2"]
-    x3, y3, x4, y4 = l2["x1"], l2["y1"], l2["x2"], l2["y2"]
-    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-    if abs(denom) < 1e-6:
-        return None
-    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
-    return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+def _passes_filters(
+    seg: dict, width: int, height: int, frame_diagonal: float
+) -> bool:
+    if seg["length"] < _MIN_LENGTH_FRACTION * frame_diagonal:
+        return False
+    if _angle_from_horizontal(seg["angle"]) <= _MIN_ANGLE_FROM_HORIZONTAL:
+        return False
+    return _enters_from_edge(seg, width, height)
 
 
-def _vp_coherent(lines: list[dict], width: int, height: int) -> bool:
-    """True when the detected lines converge toward a common vanishing point.
+def _angle_from_horizontal(angle: float) -> float:
+    """Angle to the nearest horizontal, in [0, 90] degrees."""
+    a = angle % 180
+    return min(a, 180 - a)
 
-    For each non-parallel pair of lines we compute their intersection. If the
-    intersections cluster strongly near a single point (within a grid cell),
-    the lines are genuinely converging — compositional leading lines.
 
-    If too few non-parallel pairs exist (lines are essentially parallel, e.g.
-    a pier railing), we bypass the check and return True: parallel lines
-    spanning the frame are still valid leading lines.
-    """
-    # Use the top K longest lines to keep cost O(K²).
-    candidates = sorted(lines, key=lambda l: l["length"], reverse=True)[
-        :_VP_MAX_LINES
-    ]
-
-    # Search region: the image plus a 1× buffer on each side.
-    gx_min, gx_max = -width, 2 * width
-    gy_min, gy_max = -height, 2 * height
-    cell_w = (gx_max - gx_min) / _VP_GRID_CELLS
-    cell_h = (gy_max - gy_min) / _VP_GRID_CELLS
-
-    grid: dict[tuple[int, int], int] = {}
-    n_pairs = 0
-
-    for i in range(len(candidates)):
-        for j in range(i + 1, len(candidates)):
-            # Skip pairs whose angles are too similar — their intersection is
-            # at near-infinity and carries no VP information.
-            if (
-                _angle_diff(candidates[i]["angle"], candidates[j]["angle"])
-                < _MERGE_ANGLE_DEG
-            ):
-                continue
-            pt = _line_intersect(candidates[i], candidates[j])
-            if pt is None:
-                continue
-            ix, iy = pt
-            # Only count intersections inside the extended search region.
-            if not (gx_min <= ix <= gx_max and gy_min <= iy <= gy_max):
-                continue
-            n_pairs += 1
-            bx = min(int((ix - gx_min) / cell_w), _VP_GRID_CELLS - 1)
-            by = min(int((iy - gy_min) / cell_h), _VP_GRID_CELLS - 1)
-            grid[(bx, by)] = grid.get((bx, by), 0) + 1
-
-    # Not enough non-parallel pairs → lines are roughly parallel; valid.
-    if n_pairs < _VP_MIN_PAIRS_FOR_CHECK:
-        return True
-
-    # If one angle direction accounts for the dominant share of total line
-    # length, the photo has a single compositional direction (pier railing,
-    # road lines, railway tracks) — VP convergence doesn't apply.
-    total_len = sum(l["length"] for l in candidates)
-    if total_len > 0:
-        angle_bin_lengths: dict[int, float] = defaultdict(float)
-        for l in candidates:
-            bin_ = int(round(l["angle"] / 20.0) * 20) % 180
-            angle_bin_lengths[bin_] += l["length"]
-        max_bin_len = max(angle_bin_lengths.values(), default=0.0)
-        if max_bin_len >= 0.70 * total_len:
+def _enters_from_edge(seg: dict, width: int, height: int) -> bool:
+    """True if an endpoint is within the edge margin, or the infinite line
+    extension crosses the frame border."""
+    margin_x = _EDGE_MARGIN_FRACTION * width
+    margin_y = _EDGE_MARGIN_FRACTION * height
+    for px, py in ((seg["x1"], seg["y1"]), (seg["x2"], seg["y2"])):
+        if (
+            px <= margin_x
+            or px >= width - margin_x
+            or py <= margin_y
+            or py >= height - margin_y
+        ):
             return True
+    return _line_crosses_frame_border(seg, width, height)
 
-    top_bin = max(grid.values()) if grid else 0
-    if top_bin >= _VP_MIN_CLUSTER_FRACTION * n_pairs:
-        return True
 
-    # Perspective-convergence parallel check: near-parallel lines with a
-    # measurable angular spread indicate a pier / road receding to a very
-    # distant vanishing point whose VP falls outside the search region.
-    # Two conditions must both hold:
-    #   1. A dominant angle group (within 30° of each other) accounts for
-    #      ≥ 70% of total line length (lines are "mostly going the same way").
-    #   2. The angular spread WITHIN that group is ≥ 20° (lines diverge enough
-    #      to indicate real perspective, not a flat parallel pattern).
-    # This correctly accepts a pier receding to the horizon (spread ~27°) and
-    # correctly rejects a plain wall with a horizontal edge (spread ~16°).
-    if total_len > 0:
-        best_group_len = 0.0
-        best_group: list[dict] = []
-        for ref in candidates:
-            group = [
-                l for l in candidates
-                if _angle_diff(l["angle"], ref["angle"]) <= 30.0
-            ]
-            group_len = sum(l["length"] for l in group)
-            if group_len > best_group_len:
-                best_group_len = group_len
-                best_group = group
-        if best_group_len >= 0.70 * total_len and len(best_group) >= 2:
-            max_spread = max(
-                _angle_diff(la["angle"], lb["angle"])
-                for la in best_group
-                for lb in best_group
-            )
-            if max_spread >= 20.0:
+def _line_crosses_frame_border(seg: dict, width: int, height: int) -> bool:
+    """True if the infinite line through the segment intersects the frame
+    rectangle boundary [0, width] x [0, height]."""
+    x1, y1, x2, y2 = seg["x1"], seg["y1"], seg["x2"], seg["y2"]
+    dx, dy = x2 - x1, y2 - y1
+    eps = 1e-9
+    if dx != 0:
+        for xb in (0.0, float(width)):
+            t = (xb - x1) / dx
+            y = y1 + t * dy
+            if -eps <= y <= height + eps:
                 return True
-
+    if dy != 0:
+        for yb in (0.0, float(height)):
+            t = (yb - y1) / dy
+            x = x1 + t * dx
+            if -eps <= x <= width + eps:
+                return True
     return False
-
-
-def _angle_diff(a: float, b: float) -> float:
-    """Smallest difference between two line angles in [0, 180) degrees."""
-    d = abs(a - b) % 180
-    return min(d, 180 - d)
 
 
 def _point_to_line_distance(
@@ -275,84 +230,10 @@ def _point_to_line_distance(
     return abs(dy * (px - x1) - dx * (py - y1)) / norm
 
 
-def _merge_segments(segments: list[dict]) -> list[dict]:
-    """Greedily cluster near-duplicate segments and merge each cluster.
-
-    Input must be sorted longest-first: the longest segment of each cluster
-    acts as the representative that later fragments are compared against.
-    The merged line spans the extreme projections of every clustered
-    endpoint onto the representative's axis, so fragments extend the line
-    rather than being simply discarded.
-    """
-    clusters: list[list[dict]] = []
-    for seg in segments:
-        mx = (seg["x1"] + seg["x2"]) / 2
-        my = (seg["y1"] + seg["y2"]) / 2
-        placed = False
-        for cluster in clusters:
-            rep = cluster[0]
-            if (
-                _angle_diff(seg["angle"], rep["angle"]) <= _MERGE_ANGLE_DEG
-                and _point_to_line_distance(
-                    mx, my, rep["x1"], rep["y1"], rep["x2"], rep["y2"]
-                )
-                <= _MERGE_OFFSET_PX
-            ):
-                cluster.append(seg)
-                placed = True
-                break
-        if not placed:
-            clusters.append([seg])
-
-    merged: list[dict] = []
-    for cluster in clusters:
-        rep = cluster[0]
-        dx = rep["x2"] - rep["x1"]
-        dy = rep["y2"] - rep["y1"]
-        norm = math.hypot(dx, dy) or 1.0
-        ux, uy = dx / norm, dy / norm
-
-        # Project every endpoint in the cluster onto the representative's
-        # axis; the merged line spans the extremes.
-        ts: list[float] = []
-        for seg in cluster:
-            for px, py in ((seg["x1"], seg["y1"]), (seg["x2"], seg["y2"])):
-                ts.append((px - rep["x1"]) * ux + (py - rep["y1"]) * uy)
-        t_min, t_max = min(ts), max(ts)
-
-        x1 = rep["x1"] + t_min * ux
-        y1 = rep["y1"] + t_min * uy
-        x2 = rep["x1"] + t_max * ux
-        y2 = rep["y1"] + t_max * uy
-        angle = math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
-        merged.append(
-            {
-                "x1": int(round(x1)),
-                "y1": int(round(y1)),
-                "x2": int(round(x2)),
-                "y2": int(round(y2)),
-                "angle": round(angle, 1),
-                "length": round(t_max - t_min, 1),
-            }
-        )
-
-    merged.sort(key=lambda ln: ln["length"], reverse=True)
-    return merged
-
-
-def _spread_ok(lines: list[dict], width: int, height: int) -> bool:
-    """True when the lines span a meaningful portion of the frame.
-
-    Rejects the foliage/bark case: many segments confined to one small
-    region are texture, not compositional leading lines.
-    """
-    if not lines:
-        return False
-    xs: list[int] = []
-    ys: list[int] = []
+def _dominant_angle(lines: list[dict]) -> float:
+    """Length-weighted dominant angle, binned to 10 degrees (in [0, 180))."""
+    weight: dict[int, float] = defaultdict(float)
     for ln in lines:
-        xs.extend((ln["x1"], ln["x2"]))
-        ys.extend((ln["y1"], ln["y2"]))
-    spread = math.hypot(max(xs) - min(xs), max(ys) - min(ys))
-    frame_diagonal = math.hypot(width, height)
-    return spread >= _MIN_SPREAD_FRACTION * frame_diagonal
+        bin_ = int(round(ln["angle"] / 10.0) * 10) % 180
+        weight[bin_] += ln["length"]
+    return float(max(weight, key=weight.__getitem__))

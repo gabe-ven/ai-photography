@@ -45,7 +45,7 @@ def run_composition_analysis(image: Image.Image) -> dict:
 
     result = {
         "rule_of_thirds": analyze_rule_of_thirds(gray, subject),
-        "leading_lines": detect_leading_lines(gray),
+        "leading_lines": detect_leading_lines(gray, subject),
         "horizon": detect_horizon(gray),
         "symmetry": analyze_symmetry(gray),
         "subject_position": estimate_subject_position(gray, subject),

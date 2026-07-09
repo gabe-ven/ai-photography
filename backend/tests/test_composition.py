@@ -712,22 +712,45 @@ def test_leading_lines_detects_near_vertical() -> None:
     assert result["line_count"] >= 2
 
 
-def test_leading_lines_detects_converging_diagonal() -> None:
-    """Diagonals converging to a vanishing point (road, railway, corridor)."""
+def test_leading_lines_converge_to_subject_centroid() -> None:
+    """NEW APPROACH: diagonals count as leading lines only when they converge
+    toward the subject. Two diagonals meeting at the top-center vanishing point
+    (100, 0) are detected when a Subject sits there, because their extensions
+    pass within 15% of the frame diagonal of the subject centroid."""
     img = np.zeros((200, 200), dtype=np.uint8)
     cv2.line(img, (0, 199), (100, 0), 255, 2)   # left edge converging up
     cv2.line(img, (199, 199), (100, 0), 255, 2)  # right edge converging up
-    result = detect_leading_lines(img)
+    # Subject at the vanishing point (normalized (0.5, 0.0)).
+    subject = Subject.from_saliency((0.5, 0.0))
+    result = detect_leading_lines(img, subject)
     assert result["has_leading_lines"] is True
     assert result["line_count"] >= 2
 
 
+def test_leading_lines_reject_when_not_converging_to_subject() -> None:
+    """NEW APPROACH: the same two diagonals converging at top-center do NOT
+    count when the subject is bottom-center — the lines lead away from the
+    subject, so the convergence test (and thus has_leading_lines) fails."""
+    img = np.zeros((200, 200), dtype=np.uint8)
+    cv2.line(img, (0, 199), (100, 0), 255, 2)
+    cv2.line(img, (199, 199), (100, 0), 255, 2)
+    subject = Subject.from_saliency((0.5, 0.95))  # bottom-center, away from VP
+    result = detect_leading_lines(img, subject)
+    assert result["has_leading_lines"] is False
+
+
 def test_leading_lines_longest_first() -> None:
     """Lines must be sorted longest-first so the overlay always shows the most
-    significant lines when line_count exceeds the 20-line display cap."""
+    significant lines when line_count exceeds the 20-line display cap.
+
+    NEW APPROACH: all test lines must clear the filter chain (>15° from
+    horizontal, >=20% of the frame diagonal) and pass through the frame center
+    (the (0.5, 0.5) fallback used when no Subject is supplied), so they qualify
+    as converging leading lines."""
     img = np.zeros((200, 200), dtype=np.uint8)
-    cv2.line(img, (0, 100), (199, 100), 255, 2)   # full-width horizontal (~200px)
-    cv2.line(img, (100, 0), (100, 50), 255, 2)    # short vertical (50px)
+    cv2.line(img, (0, 0), (199, 199), 255, 2)    # diagonal through center (~281px)
+    cv2.line(img, (50, 199), (150, 0), 255, 2)   # steep diagonal through center (~222px)
+    cv2.line(img, (100, 0), (100, 199), 255, 2)  # vertical through center (~199px)
     result = detect_leading_lines(img)
     assert result["has_leading_lines"] is True
     lines = result["lines"]
@@ -738,31 +761,31 @@ def test_leading_lines_longest_first() -> None:
         )
 
 
-def test_leading_lines_merges_collinear_fragments() -> None:
-    """A real long line plus nearby collinear-ish short fragments (foliage-like
-    fragmentation of the same edge) must merge into ONE reported line, not
-    count each fragment individually.
-
-    A second distinct line at a clearly different angle satisfies _MIN_LINE_COUNT
-    so the detection result is valid to inspect.  The total reported count must
-    be ≤ 2 — the 4 horizontal fragments merged into 1, plus the 1 diagonal = 2.
+def test_leading_lines_filters_short_and_horizontal() -> None:
+    """NEW APPROACH: the LSD filter chain rejects texture noise and horizon
+    candidates. Short fragments (below 20% of the frame diagonal) and the
+    near-horizontal edge are both filtered out, leaving only the long diagonal
+    that runs through the frame center — so the result reports a leading line
+    in the diagonal direction and never a horizontal one.
     """
     img = np.zeros((200, 200), dtype=np.uint8)
-    # The real horizontal edge.
+    # Near-horizontal edge — a horizon candidate, must be filtered by the angle gate.
     cv2.line(img, (20, 100), (180, 100), 255, 2)
-    # Fragments of "the same edge": short, same angle, 8px perpendicular
-    # offset (within the 15px merge window).
+    # Short fragments (~35px << 20% of the ~283px diagonal) — texture noise.
     cv2.line(img, (30, 108), (65, 108), 255, 2)
     cv2.line(img, (80, 108), (115, 108), 255, 2)
     cv2.line(img, (130, 108), (165, 108), 255, 2)
-    # Second distinct line (diagonal, >10° different) to satisfy _MIN_LINE_COUNT.
+    # Long diagonal through the center — the only genuine leading line.
     cv2.line(img, (10, 10), (190, 190), 255, 2)
     result = detect_leading_lines(img)
     assert result["has_leading_lines"] is True
-    assert result["line_count"] <= 2, (
-        f"Collinear fragments should merge into one line (total ≤ 2 with diagonal), "
-        f"got {result['line_count']}"
-    )
+    assert abs(result["dominant_angle"] - 45) <= 15
+    # No surviving line may be near-horizontal (the horizon edge was filtered).
+    for ln in result["lines"]:
+        angle_from_h = min(ln["angle"] % 180, 180 - (ln["angle"] % 180))
+        assert angle_from_h > 15, (
+            f"A near-horizontal line ({ln['angle']}°) leaked past the angle filter"
+        )
 
 
 def test_leading_lines_rejects_small_region_cluster() -> None:
