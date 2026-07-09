@@ -7,10 +7,14 @@ schema grows — the route logic stays simple.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+import json
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app.core.config import Settings, get_settings
 from app.schemas.analysis import (
+    AIAnalysis,
+    AIAnalysisResponse,
     AnalysisResponse,
     CompositionInfo,
     ExifInfo,
@@ -18,6 +22,7 @@ from app.schemas.analysis import (
     VisionInfo,
 )
 from app.services import image_io
+from app.services.ai import photo_critique
 from app.services.composition import composition_pipeline
 from app.services.exif import exif_service
 from app.services.vision import analysis_pipeline
@@ -55,3 +60,45 @@ async def analyze(
         vision=VisionInfo(**vision),
         composition=CompositionInfo(**composition),
     )
+
+
+@router.post("/ai-analysis", response_model=AIAnalysisResponse)
+async def ai_analysis(
+    file: UploadFile = File(...),
+    context: str | None = Form(
+        default=None,
+        description="Optional JSON string of the prior /analyze response, used "
+        "to ground the AI in the already-computed CV/EXIF/vision measurements.",
+    ),
+    settings: Settings = Depends(get_settings),
+) -> AIAnalysisResponse:
+    """Generate an AI critique of the uploaded photo.
+
+    Separate from /analyze so the fast CV metrics can render immediately while
+    this slower vision-language call runs. Accepts the prior /analyze response
+    as ``context`` so the model reasons from measured facts.
+    """
+    data = await file.read()
+
+    try:
+        image_io.validate_upload(
+            data, file.content_type, max_bytes=settings.max_upload_bytes
+        )
+        image = image_io.open_image(data)
+    except image_io.ImageValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+
+    parsed_context: dict | None = None
+    if context:
+        try:
+            loaded = json.loads(context)
+            if isinstance(loaded, dict):
+                parsed_context = loaded
+        except json.JSONDecodeError:
+            # A malformed context is non-fatal: fall back to image-only analysis.
+            parsed_context = None
+
+    critique = photo_critique.generate_critique(image, parsed_context)
+    return AIAnalysisResponse(ai=AIAnalysis(**critique))

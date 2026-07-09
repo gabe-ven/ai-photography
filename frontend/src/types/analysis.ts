@@ -191,3 +191,55 @@ export interface AnalysisResponse {
   vision: VisionInfo;
   composition: CompositionInfo;
 }
+
+// --- Phase 3: AI analysis --------------------------------------------------
+// All content fields are optional: they come from a vision-language model and
+// may be partially omitted, so the UI must render whatever is present.
+
+export interface SceneInfo {
+  summary: string | null;
+  setting: string | null;
+  tags: string[];
+}
+
+export interface SubjectInsight {
+  primary: string | null;
+  description: string | null;
+}
+
+export interface LightingInfo {
+  summary: string | null;
+  direction: string | null;
+  quality: string | null;
+  time_of_day: string | null;
+}
+
+export interface CameraSettings {
+  aperture: string | null;
+  shutter_speed: string | null;
+  iso: string | null;
+  focal_length: string | null;
+  from_exif: boolean;
+  reasoning: string | null;
+}
+
+export interface CompositionCritique {
+  strengths: string[];
+  improvements: string[];
+  overall: string | null;
+}
+
+export interface AIAnalysis {
+  available: boolean;
+  reason: string | null;
+  scene: SceneInfo | null;
+  subject: SubjectInsight | null;
+  lighting: LightingInfo | null;
+  camera_settings: CameraSettings | null;
+  composition_critique: CompositionCritique | null;
+  recreation_guide: string[];
+}
+
+export interface AIAnalysisResponse {
+  ai: AIAnalysis;
+}

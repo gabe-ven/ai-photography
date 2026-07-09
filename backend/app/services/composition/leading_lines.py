@@ -111,8 +111,26 @@ def detect_leading_lines(image: np.ndarray) -> dict:
 
     # Length-weighted angle vote: long lines carry more weight so a few
     # strong diagonals beat many short horizontal noise segments.
+    #
+    # When near-horizontal lines (within 20° of 0°) are a minority of the total
+    # line length (< 40%), they are incidental structural background elements
+    # (building floors, sky/ground boundaries) rather than the compositional
+    # leading lines.  Exclude them from the angle vote so a diagonal or vertical
+    # leading line is not masked by background horizontal edges.  When horizontal
+    # lines ARE dominant (≥ 40%), they are the intended compositional direction
+    # (pier receding to horizon, road surface) and must stay in the vote.
+    total_len_all = sum(ln["length"] for ln in lines)
+    horiz_len = sum(
+        ln["length"] for ln in lines if _angle_diff(ln["angle"], 0.0) <= 20
+    )
+    vote_lines = lines
+    if total_len_all > 0 and horiz_len / total_len_all < 0.40:
+        non_horiz = [ln for ln in lines if _angle_diff(ln["angle"], 0.0) > 20]
+        if non_horiz:
+            vote_lines = non_horiz
+
     angle_weight: dict[int, float] = defaultdict(float)
-    for ln in lines:
+    for ln in vote_lines:
         bin_ = int(round(ln["angle"] / 10.0) * 10) % 180
         angle_weight[bin_] += ln["length"]
     dominant_bin = max(angle_weight, key=angle_weight.__getitem__)
@@ -202,7 +220,41 @@ def _vp_coherent(lines: list[dict], width: int, height: int) -> bool:
             return True
 
     top_bin = max(grid.values()) if grid else 0
-    return top_bin >= _VP_MIN_CLUSTER_FRACTION * n_pairs
+    if top_bin >= _VP_MIN_CLUSTER_FRACTION * n_pairs:
+        return True
+
+    # Perspective-convergence parallel check: near-parallel lines with a
+    # measurable angular spread indicate a pier / road receding to a very
+    # distant vanishing point whose VP falls outside the search region.
+    # Two conditions must both hold:
+    #   1. A dominant angle group (within 30° of each other) accounts for
+    #      ≥ 70% of total line length (lines are "mostly going the same way").
+    #   2. The angular spread WITHIN that group is ≥ 20° (lines diverge enough
+    #      to indicate real perspective, not a flat parallel pattern).
+    # This correctly accepts a pier receding to the horizon (spread ~27°) and
+    # correctly rejects a plain wall with a horizontal edge (spread ~16°).
+    if total_len > 0:
+        best_group_len = 0.0
+        best_group: list[dict] = []
+        for ref in candidates:
+            group = [
+                l for l in candidates
+                if _angle_diff(l["angle"], ref["angle"]) <= 30.0
+            ]
+            group_len = sum(l["length"] for l in group)
+            if group_len > best_group_len:
+                best_group_len = group_len
+                best_group = group
+        if best_group_len >= 0.70 * total_len and len(best_group) >= 2:
+            max_spread = max(
+                _angle_diff(la["angle"], lb["angle"])
+                for la in best_group
+                for lb in best_group
+            )
+            if max_spread >= 20.0:
+                return True
+
+    return False
 
 
 def _angle_diff(a: float, b: float) -> float:

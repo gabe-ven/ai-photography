@@ -136,6 +136,49 @@ def test_horizon_uniform_noisy_image_no_false_positive() -> None:
     assert result["horizon_detected"] is False
 
 
+def test_horizon_sky_above_water_below_detected() -> None:
+    """Simulate a waterline photo: smooth gradient sky occupies the top half,
+    a sharp horizontal edge separates it from textured 'water' below.
+    The horizon must be detected even when stronger structural edges exist
+    elsewhere in the frame."""
+    rng = np.random.default_rng(42)
+    img = np.zeros((200, 200), dtype=np.uint8)
+    # Top 45%: uniform sky (value 180, low gradient)
+    img[:90, :] = 180
+    # Rows 90–94: horizon transition band
+    for i, v in enumerate(range(180, 50, -26)):
+        img[90 + i, :] = max(0, v)
+    # Bottom 52%: textured water/ground (noisy, high gradient)
+    img[95:, :] = rng.integers(30, 100, size=(105, 200), dtype=np.uint8)
+    result = detect_horizon(img)
+    assert result["horizon_detected"] is True, (
+        "Horizon should be detected when smooth sky is above a sharp waterline"
+    )
+    assert result["horizon_y"] < 0.60, (
+        f"Detected horizon at {result['horizon_y']:.2f} should be in the upper "
+        f"portion (sky/water boundary ~0.45), not deep in the textured region"
+    )
+
+
+def test_horizon_structural_edge_no_sky_above_rejected() -> None:
+    """A strong horizontal edge with consistently textured content ABOVE it
+    (like a bridge deck or pier railing) must NOT be detected as a horizon.
+    Uses a deterministic every-2-row alternating pattern to ensure the sky
+    window is reliably noisy (not accidentally smooth due to random seed)."""
+    img = np.zeros((200, 200), dtype=np.uint8)
+    # Deterministic alternating-brightness rows (every 2 rows) → consistent
+    # high Sobel_Y throughout; no accidentally smooth patches.
+    for r in range(200):
+        img[r, :] = 200 if (r // 2) % 2 == 0 else 50
+    # Bright structural bar at 50%: surrounded by the same alternating texture.
+    img[100, :] = 255
+    result = detect_horizon(img)
+    assert result["horizon_detected"] is False, (
+        "A strong edge with consistently textured/busy content above it "
+        "is NOT a horizon"
+    )
+
+
 # --- symmetry -------------------------------------------------------------
 
 

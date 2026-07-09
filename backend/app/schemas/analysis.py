@@ -181,3 +181,63 @@ class AnalysisResponse(BaseModel):
     composition: CompositionInfo = Field(
         ..., description="Geometric composition metrics."
     )
+
+
+# --- Phase 3: AI analysis --------------------------------------------------
+# Every field on the sub-models is optional: the response is produced by a
+# vision-language model, so a partial/omitted field must degrade gracefully
+# rather than fail validation.
+
+
+class SceneInfo(BaseModel):
+    summary: str | None = None
+    setting: str | None = None
+    tags: list[str] = Field(default_factory=list)
+
+
+class SubjectInsight(BaseModel):
+    primary: str | None = None
+    description: str | None = None
+
+
+class LightingInfo(BaseModel):
+    summary: str | None = None
+    direction: str | None = None
+    quality: str | None = None
+    time_of_day: str | None = None
+
+
+class CameraSettings(BaseModel):
+    aperture: str | None = None
+    shutter_speed: str | None = None
+    iso: str | None = None
+    focal_length: str | None = None
+    from_exif: bool = False
+    reasoning: str | None = None
+
+
+class CompositionCritique(BaseModel):
+    strengths: list[str] = Field(default_factory=list)
+    improvements: list[str] = Field(default_factory=list)
+    overall: str | None = None
+
+
+class AIAnalysis(BaseModel):
+    """Vision-language interpretation of the photo (Phase 3).
+
+    ``available`` is False when AI analysis is unconfigured or failed; in that
+    case ``reason`` explains why and the content fields are omitted.
+    """
+
+    available: bool
+    reason: str | None = None
+    scene: SceneInfo | None = None
+    subject: SubjectInsight | None = None
+    lighting: LightingInfo | None = None
+    camera_settings: CameraSettings | None = None
+    composition_critique: CompositionCritique | None = None
+    recreation_guide: list[str] = Field(default_factory=list)
+
+
+class AIAnalysisResponse(BaseModel):
+    ai: AIAnalysis = Field(..., description="AI interpretation of the photo.")

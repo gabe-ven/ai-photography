@@ -1,12 +1,24 @@
 import { CompositionDashboard } from "@/components/composition/CompositionDashboard";
+import { AICritiqueDashboard } from "@/features/ai/AICritiqueDashboard";
 import { VisionDashboard } from "@/features/vision/VisionDashboard";
 import { CameraInfoCard } from "./CameraInfoCard";
 import { Dropzone } from "./Dropzone";
 import { useImageAnalysis } from "./useImageAnalysis";
 
 export function UploadPanel() {
-  const { file, previewUrl, status, error, result, selectFile, analyze, reset } =
-    useImageAnalysis();
+  const {
+    file,
+    previewUrl,
+    status,
+    error,
+    result,
+    aiStatus,
+    aiError,
+    ai,
+    selectFile,
+    analyze,
+    reset,
+  } = useImageAnalysis();
 
   if (!file || !previewUrl) {
     return (
@@ -64,6 +76,13 @@ export function UploadPanel() {
           loading={status === "loading"}
           error={status === "error" ? error : null}
         />
+        {status === "success" && (
+          <AICritiqueDashboard
+            ai={ai}
+            loading={aiStatus === "loading"}
+            error={aiStatus === "error" ? aiError : null}
+          />
+        )}
       </div>
     </div>
   );

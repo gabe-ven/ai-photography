@@ -31,12 +31,12 @@
 
 ## Phase 3 — AI Analysis
 
-- [ ] Scene understanding
-- [ ] Subject identification
-- [ ] Lighting explanation
-- [ ] Camera setting estimation
-- [ ] Composition critique
-- [ ] Recreation guide
+- [x] Scene understanding
+- [x] Subject identification
+- [x] Lighting explanation
+- [x] Camera setting estimation
+- [x] Composition critique
+- [x] Recreation guide
 
 ---
 
