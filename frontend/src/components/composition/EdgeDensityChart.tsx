@@ -33,23 +33,23 @@ export function EdgeDensityChart({
     <div className="h-full w-full">
       <ResponsiveContainer width="100%" height="100%" minHeight={200}>
         <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+          <CartesianGrid stroke="#e8e8e4" vertical={false} />
           <XAxis
             dataKey="region"
-            tick={{ fill: "rgba(255,255,255,0.6)", fontSize: 11 }}
-            axisLine={{ stroke: "rgba(255,255,255,0.12)" }}
+            tick={{ fill: "#1c1c1a", fontSize: 11 }}
+            axisLine={{ stroke: "#e8e8e4" }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
+            tick={{ fill: "#999994", fontSize: 10 }}
             axisLine={false}
             tickLine={false}
             unit="%"
           />
           <Tooltip
-            cursor={{ fill: "rgba(255,255,255,0.05)" }}
-            contentStyle={DARK_TOOLTIP}
-            labelStyle={{ color: "#e5e7eb" }}
+            cursor={{ fill: "rgba(10,10,8,0.04)" }}
+            contentStyle={LIGHT_TOOLTIP}
+            labelStyle={{ color: "#1c1c1a" }}
             itemStyle={{ color: "#34d399" }}
             formatter={(value) => [`${Number(value)}%`, "Edge density"]}
           />
@@ -73,10 +73,10 @@ function round1(v: number): number {
   return Math.round(v * 10) / 10;
 }
 
-const DARK_TOOLTIP = {
-  background: "rgba(10,10,10,0.92)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: 12,
-  color: "#e5e7eb",
+const LIGHT_TOOLTIP = {
+  background: "#ffffff",
+  border: "1px solid #e8e8e4",
+  borderRadius: 2,
+  color: "#1c1c1a",
   fontSize: 12,
 } as const;

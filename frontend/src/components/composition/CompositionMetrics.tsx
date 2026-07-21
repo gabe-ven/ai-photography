@@ -5,10 +5,10 @@ import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 type Status = "good" | "warn" | "info" | "neutral";
 
 const STATUS_STYLES: Record<Status, string> = {
-  good: "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-300",
-  warn: "border-amber-500/30 bg-amber-500/[0.06] text-amber-300",
-  info: "border-sky-500/30 bg-sky-500/[0.06] text-sky-300",
-  neutral: "border-neutral-700 bg-neutral-900/40 text-neutral-400",
+  good: "bg-heading text-white",
+  warn: "border border-border text-muted",
+  info: "text-muted",
+  neutral: "text-muted",
 };
 
 interface MetricDef {
@@ -181,22 +181,20 @@ export function CompositionMetrics({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: i * 0.04 }}
-          className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4"
+          className="rounded-[2px] border border-border bg-surface p-4"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-neutral-400">
-              <span className="text-neutral-500">{m.icon}</span>
-              <span className="text-xs font-medium uppercase tracking-wide">
+            <div className="flex items-center gap-2 text-muted">
+              <span className="text-muted">{m.icon}</span>
+              <span className="font-mono text-xs uppercase tracking-widest">
                 {m.label}
               </span>
               {m.aiSourced && (
-                <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-300">
-                  AI
-                </span>
+                <span className="font-mono text-[9px] text-blue-600">· AI</span>
               )}
             </div>
             <span
-              className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase ${STATUS_STYLES[m.status]}`}
+              className={`rounded-none px-2 py-0.5 font-mono text-[10px] uppercase ${STATUS_STYLES[m.status]}`}
             >
               {m.status === "good"
                 ? "Strong"
@@ -207,10 +205,10 @@ export function CompositionMetrics({
                     : "Low"}
             </span>
           </div>
-          <div className="mt-2 text-2xl font-semibold tabular-nums text-neutral-100">
+          <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-heading">
             {m.value}
           </div>
-          <p className="mt-1 text-xs leading-snug text-neutral-500">{m.explanation}</p>
+          <p className="mt-1 text-xs leading-snug text-muted">{m.explanation}</p>
         </motion.div>
       ))}
     </div>

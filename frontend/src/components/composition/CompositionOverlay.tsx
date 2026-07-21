@@ -46,7 +46,7 @@ export function CompositionOverlay({
   }, []);
 
   return (
-    <div className="relative w-full overflow-hidden rounded-xl bg-neutral-950 ring-1 ring-white/5">
+    <div className="relative w-full overflow-hidden border border-border bg-surface">
       <PhotoLayer imageUrl={imageUrl} onLoad={handleLoad} />
 
       <AnimatePresence>

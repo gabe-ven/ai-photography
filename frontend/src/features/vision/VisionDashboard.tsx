@@ -3,7 +3,7 @@ import { DominantColorPalette } from "@/components/DominantColorPalette";
 import { HistogramChart } from "@/components/HistogramChart";
 import { MetricCard, MetricCardSkeleton } from "@/components/MetricCard";
 import { Section } from "@/components/Section";
-import { fadeUpIn, staggerContainer, staggerItem } from "@/lib/motionVariants";
+import { sectionReveal, staggerContainer, staggerItem } from "@/lib/motionVariants";
 import type { VisionInfo } from "@/types/analysis";
 
 interface VisionDashboardProps {
@@ -21,16 +21,16 @@ export function VisionDashboard({
   error = null,
 }: VisionDashboardProps) {
   return (
-    <motion.div {...fadeUpIn(0)}>
-      <Section title="Vision analysis" description={SECTION_DESCRIPTION}>
+    <motion.div {...sectionReveal(0)}>
+      <Section number="01" title="VISION ANALYSIS" description={SECTION_DESCRIPTION}>
         {loading ? (
           <MetricGridSkeleton />
         ) : error ? (
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <div className="border border-red-500/40 bg-red-500/10 px-4 py-3 font-mono text-sm text-red-300">
             {error}
           </div>
         ) : !vision ? (
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted">
             Run the analysis to compute brightness, contrast, sharpness, color, and
             more.
           </p>
@@ -105,13 +105,13 @@ function VisionContent({ vision }: { vision: VisionInfo }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+          <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted">
             Dominant colors
           </h3>
           <DominantColorPalette colors={vision.dominant_colors} />
         </div>
         <div>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+          <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted">
             RGB histogram
           </h3>
           <HistogramChart histogram={vision.histogram} />

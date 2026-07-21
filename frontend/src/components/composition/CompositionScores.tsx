@@ -84,7 +84,7 @@ function RadialScore({ label, value, color }: ScoreDef) {
             />
             <RadialBar
               dataKey="value"
-              background={{ fill: "rgba(255,255,255,0.06)" }}
+              background={{ fill: "rgba(10,10,8,0.06)" }}
               cornerRadius={10}
               isAnimationActive
               animationDuration={900}
@@ -92,12 +92,12 @@ function RadialScore({ label, value, color }: ScoreDef) {
           </RadialBarChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-semibold tabular-nums text-neutral-100">
+          <span className="text-lg font-semibold tabular-nums text-heading">
             {value}%
           </span>
         </div>
       </div>
-      <span className="mt-1 text-center text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+      <span className="mt-1 text-center text-[11px] font-medium uppercase tracking-wide text-muted">
         {label}
       </span>
     </div>

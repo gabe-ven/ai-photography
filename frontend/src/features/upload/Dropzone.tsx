@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { useRef, useState, type DragEvent } from "react";
 import { ACCEPTED_TYPES, MAX_UPLOAD_MB } from "@/lib/api";
 
@@ -17,7 +18,7 @@ export function Dropzone({ onFile }: DropzoneProps) {
   };
 
   return (
-    <div
+    <motion.div
       role="button"
       tabIndex={0}
       onClick={() => inputRef.current?.click()}
@@ -28,17 +29,17 @@ export function Dropzone({ onFile }: DropzoneProps) {
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
-      className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-12 text-center transition-colors ${
-        dragging
-          ? "border-emerald-400 bg-emerald-400/5"
-          : "border-neutral-700 hover:border-neutral-500 hover:bg-neutral-900"
-      }`}
+      animate={{
+        scale: dragging ? 1.01 : 1,
+        borderColor: dragging ? "#0a0a08" : "#e8e8e4",
+      }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className="flex cursor-pointer flex-col items-center justify-center gap-3 border border-dashed p-16 text-center hover:border-heading/40"
     >
-      <div className="text-5xl">📷</div>
-      <p className="text-lg font-medium text-neutral-100">
-        Drop a photo here, or click to browse
+      <p className="font-mono text-sm text-muted">
+        Drop a photograph here — or click to browse
       </p>
-      <p className="text-sm text-neutral-500">
+      <p className="font-mono text-xs text-muted">
         JPEG, PNG, WEBP, TIFF or BMP · up to {MAX_UPLOAD_MB}MB
       </p>
       <input
@@ -52,6 +53,6 @@ export function Dropzone({ onFile }: DropzoneProps) {
           e.target.value = "";
         }}
       />
-    </div>
+    </motion.div>
   );
 }

@@ -6,12 +6,12 @@ interface DominantColorPaletteProps {
 
 export function DominantColorPalette({ colors }: DominantColorPaletteProps) {
   if (colors.length === 0) {
-    return <p className="text-sm text-neutral-500">No colors detected.</p>;
+    return <p className="text-sm text-muted">No colors detected.</p>;
   }
 
   return (
     <div>
-      <div className="flex h-10 w-full overflow-hidden rounded-lg ring-1 ring-white/10">
+      <div className="flex h-10 w-full overflow-hidden rounded-lg ring-1 ring-border">
         {colors.map((color, index) => (
           <div
             key={`${color.hex}-${index}`}
@@ -30,11 +30,11 @@ export function DominantColorPalette({ colors }: DominantColorPaletteProps) {
             className="flex items-center gap-2 text-xs"
           >
             <span
-              className="h-4 w-4 shrink-0 rounded ring-1 ring-white/10"
+              className="h-4 w-4 shrink-0 rounded ring-1 ring-border"
               style={{ backgroundColor: color.hex }}
             />
-            <span className="font-mono uppercase text-neutral-300">{color.hex}</span>
-            <span className="text-neutral-500">
+            <span className="font-mono uppercase text-ink">{color.hex}</span>
+            <span className="text-muted">
               {Math.round(color.proportion * 100)}%
             </span>
           </li>

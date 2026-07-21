@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Section } from "@/components/Section";
 import { ShimmerOverlay } from "@/components/Shimmer";
-import { fadeUpIn, staggerContainer, staggerItem } from "@/lib/motionVariants";
-import type { AIAnalysis, CameraSettings, FujifilmRecipe } from "@/types/analysis";
+import { sectionReveal, staggerContainer, staggerItem } from "@/lib/motionVariants";
+import type { AIAnalysis, CameraSettings } from "@/types/analysis";
 
 interface AICritiqueDashboardProps {
   ai: AIAnalysis | null;
@@ -19,13 +19,14 @@ export function AICritiqueDashboard({
   error = null,
 }: AICritiqueDashboardProps) {
   return (
-    <motion.div {...fadeUpIn(0.3)}>
+    <motion.div {...sectionReveal(0)}>
       <Section
-        title="AI critique"
+        number="03"
+        title="AI CRITIQUE"
         description={SECTION_DESCRIPTION}
         action={
           loading ? (
-            <span className="animate-pulse rounded-full bg-violet-500/15 px-3 py-1 text-xs font-medium text-violet-300">
+            <span className="animate-pulse rounded-sm bg-blue-600/10 px-3 py-1 font-mono text-xs uppercase tracking-widest text-blue-600">
               Thinking…
             </span>
           ) : undefined
@@ -36,7 +37,7 @@ export function AICritiqueDashboard({
         ) : error ? (
           <Banner tone="error">{error}</Banner>
         ) : !ai ? (
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted">
             Run the analysis to generate an AI critique.
           </p>
         ) : !ai.available ? (
@@ -56,21 +57,24 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
     <div className="space-y-6">
       {ai.scene && (ai.scene.summary || ai.scene.tags.length > 0) && (
         <div>
+          <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted">
+            Scene
+          </h3>
           {ai.scene.summary && (
-            <p className="text-base leading-relaxed text-neutral-200">
+            <p className="text-base leading-relaxed text-ink/80">
               {ai.scene.summary}
             </p>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {ai.scene.setting && (
-              <span className="rounded-lg bg-neutral-800 px-2.5 py-1 text-xs text-neutral-300">
+              <span className="rounded-sm bg-heading px-2.5 py-1 font-mono text-xs text-white">
                 {ai.scene.setting}
               </span>
             )}
             {ai.scene.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-neutral-700 px-2.5 py-1 text-xs text-neutral-400"
+                className="rounded-sm border border-border px-2.5 py-1 font-mono text-xs text-muted"
               >
                 {tag}
               </span>
@@ -89,10 +93,10 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
           <motion.div variants={staggerItem}>
             <InfoCard title="Subject">
               {ai.subject.primary && (
-                <p className="font-medium text-neutral-200">{ai.subject.primary}</p>
+                <p className="font-medium text-ink">{ai.subject.primary}</p>
               )}
               {ai.subject.description && (
-                <p className="mt-1 text-sm text-neutral-400">
+                <p className="mt-1 text-sm text-muted">
                   {ai.subject.description}
                 </p>
               )}
@@ -104,7 +108,7 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
           <motion.div variants={staggerItem}>
             <InfoCard title="Lighting">
               {ai.lighting.summary && (
-                <p className="text-sm text-neutral-300">{ai.lighting.summary}</p>
+                <p className="text-sm text-ink/80">{ai.lighting.summary}</p>
               )}
               <div className="mt-2 flex flex-wrap gap-2">
                 <Chip label="Direction" value={ai.lighting.direction} />
@@ -144,7 +148,7 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
           )}
           {ai.composition_critique.overall && (
             <div className="lg:col-span-2">
-              <p className="text-sm leading-relaxed text-neutral-300">
+              <p className="text-sm leading-relaxed text-ink/80">
                 {ai.composition_critique.overall}
               </p>
             </div>
@@ -154,24 +158,20 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
 
       {ai.recreation_guide.length > 0 && (
         <div>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+          <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted">
             Recreation guide
           </h3>
           <ol className="space-y-2">
             {ai.recreation_guide.map((step, i) => (
-              <li key={i} className="flex gap-3 text-sm text-neutral-300">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-xs font-semibold text-violet-300">
-                  {i + 1}
+              <li key={i} className="flex gap-3 text-sm text-ink/80">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-heading font-mono text-xs font-semibold text-white">
+                  {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="leading-relaxed">{step}</span>
               </li>
             ))}
           </ol>
         </div>
-      )}
-
-      {ai.fujifilm_recipe?.applicable === true && (
-        <FujifilmRecipeCard recipe={ai.fujifilm_recipe} />
       )}
     </div>
   );
@@ -190,13 +190,7 @@ function CameraSettingsCard({ settings }: { settings: CameraSettings }) {
   return (
     <InfoCard title="Camera settings">
       <div className="mb-2 flex items-center gap-2">
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-            settings.from_exif
-              ? "bg-emerald-500/15 text-emerald-300"
-              : "bg-amber-500/15 text-amber-300"
-          }`}
-        >
+        <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-xs uppercase tracking-wide text-muted">
           {settings.from_exif ? "From EXIF" : "Estimated"}
         </span>
       </div>
@@ -205,10 +199,10 @@ function CameraSettingsCard({ settings }: { settings: CameraSettings }) {
           {items.map(([label, value]) => (
             <div
               key={label}
-              className="rounded-lg border border-neutral-800 bg-neutral-900/50 px-3 py-2"
+              className="border border-border bg-bg px-3 py-2"
             >
-              <div className="text-xs text-neutral-500">{label}</div>
-              <div className="mt-0.5 font-mono text-sm text-neutral-200">
+              <div className="font-mono text-xs text-muted">{label}</div>
+              <div className="mt-0.5 font-mono text-sm text-ink">
                 {value ?? "—"}
               </div>
             </div>
@@ -216,67 +210,8 @@ function CameraSettingsCard({ settings }: { settings: CameraSettings }) {
         </div>
       )}
       {settings.reasoning && (
-        <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+        <p className="mt-3 text-sm leading-relaxed text-muted">
           {settings.reasoning}
-        </p>
-      )}
-    </InfoCard>
-  );
-}
-
-function FujifilmRecipeCard({ recipe }: { recipe: FujifilmRecipe }) {
-  const s = recipe.settings;
-  const textRows: Array<[string, string | null | undefined]> = [
-    ["Grain", s?.grain],
-    ["Color Chrome Effect", s?.color_chrome_effect],
-    ["White Balance", s?.white_balance],
-  ];
-  const numRows: Array<[string, number | null | undefined]> = [
-    ["Highlights", s?.highlights],
-    ["Shadows", s?.shadows],
-    ["Color", s?.color],
-    ["Sharpness", s?.sharpness],
-    ["Noise Reduction", s?.noise_reduction],
-  ];
-
-  return (
-    <InfoCard title="Fujifilm Recipe">
-      {recipe.film_simulation && (
-        <div className="mb-3">
-          <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
-            {recipe.film_simulation}
-          </span>
-        </div>
-      )}
-      <div className="space-y-1.5">
-        {textRows.map(([label, value]) =>
-          value ? (
-            <div
-              key={label}
-              className="flex items-center justify-between gap-3 text-sm"
-            >
-              <span className="text-neutral-500">{label}</span>
-              <span className="text-neutral-200">{value}</span>
-            </div>
-          ) : null,
-        )}
-        {numRows.map(([label, value]) =>
-          value != null ? (
-            <div
-              key={label}
-              className="flex items-center justify-between gap-3 text-sm"
-            >
-              <span className="text-neutral-500">{label}</span>
-              <span className="font-mono text-neutral-200">
-                {value > 0 ? `+${value}` : `${value}`}
-              </span>
-            </div>
-          ) : null,
-        )}
-      </div>
-      {recipe.reasoning && (
-        <p className="mt-3 text-sm italic leading-relaxed text-neutral-400">
-          {recipe.reasoning}
         </p>
       )}
     </InfoCard>
@@ -291,8 +226,8 @@ function InfoCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-4">
-      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+    <div className="rounded-[2px] border border-border bg-surface p-4">
+      <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted">
         {title}
       </h3>
       {children}
@@ -303,8 +238,8 @@ function InfoCard({
 function Chip({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
-    <span className="rounded-lg bg-neutral-800 px-2.5 py-1 text-xs text-neutral-300">
-      <span className="text-neutral-500">{label}:</span> {value}
+    <span className="rounded-sm bg-bg px-2.5 py-1 font-mono text-xs text-muted">
+      <span className="text-muted">{label}:</span> {value}
     </span>
   );
 }
@@ -316,12 +251,12 @@ function BulletList({
   items: string[];
   tone: "good" | "suggest";
 }) {
-  const dot = tone === "good" ? "bg-emerald-400" : "bg-amber-400";
+  void tone; // no more color-coded good/bad — both render the same in this palette
   return (
     <ul className="space-y-2">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-2.5 text-sm text-neutral-300">
-          <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+        <li key={i} className="flex gap-2.5 text-sm text-ink/80">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-heading" />
           <span className="leading-relaxed">{item}</span>
         </li>
       ))}
@@ -338,10 +273,10 @@ function Banner({
 }) {
   const styles =
     tone === "error"
-      ? "border-red-500/40 bg-red-500/10 text-red-300"
-      : "border-neutral-700 bg-neutral-800/40 text-neutral-400";
+      ? "border-red-200 bg-red-50 text-red-700"
+      : "border-border bg-surface text-muted";
   return (
-    <div className={`rounded-xl border px-4 py-3 text-sm ${styles}`}>
+    <div className={`border px-4 py-3 font-mono text-sm ${styles}`}>
       {children}
     </div>
   );
@@ -350,29 +285,29 @@ function Banner({
 function CritiqueSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="relative h-5 w-3/4 overflow-hidden rounded bg-neutral-800">
+      <div className="relative h-5 w-3/4 overflow-hidden bg-border">
         <ShimmerOverlay />
       </div>
       <div className="flex gap-2">
-        <div className="relative h-6 w-20 overflow-hidden rounded-full bg-neutral-800">
+        <div className="relative h-6 w-20 overflow-hidden rounded-sm bg-border">
           <ShimmerOverlay />
         </div>
-        <div className="relative h-6 w-16 overflow-hidden rounded-full bg-neutral-800">
+        <div className="relative h-6 w-16 overflow-hidden rounded-sm bg-border">
           <ShimmerOverlay />
         </div>
-        <div className="relative h-6 w-24 overflow-hidden rounded-full bg-neutral-800">
+        <div className="relative h-6 w-24 overflow-hidden rounded-sm bg-border">
           <ShimmerOverlay />
         </div>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="relative h-28 overflow-hidden rounded-xl bg-neutral-800/50">
+        <div className="relative h-28 overflow-hidden bg-surface">
           <ShimmerOverlay />
         </div>
-        <div className="relative h-28 overflow-hidden rounded-xl bg-neutral-800/50">
+        <div className="relative h-28 overflow-hidden bg-surface">
           <ShimmerOverlay />
         </div>
       </div>
-      <div className="relative h-24 overflow-hidden rounded-xl bg-neutral-800/50">
+      <div className="relative h-24 overflow-hidden bg-surface">
         <ShimmerOverlay />
       </div>
     </div>

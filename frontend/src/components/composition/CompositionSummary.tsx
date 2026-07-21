@@ -45,24 +45,24 @@ export function CompositionSummary({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-baseline gap-2">
-        <span className="text-4xl font-semibold tabular-nums text-neutral-100">
+        <span className="font-mono text-4xl font-semibold tabular-nums text-heading">
           {score}
         </span>
-        <span className="text-sm text-neutral-500">/ 100</span>
-        <span className={`ml-auto rounded-full border px-2.5 py-0.5 text-[11px] font-medium uppercase ${band.className}`}>
+        <span className="text-sm text-muted">/ 100</span>
+        <span className={`ml-auto rounded-none px-2.5 py-0.5 font-mono text-[11px] uppercase ${band.className}`}>
           {band.label}
         </span>
       </div>
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="mt-1 text-xs text-muted">
         Mean of applicable composition axes.
       </p>
       <ul className="mt-4 space-y-2">
         {takeaways.map((t) => (
           <li
             key={t}
-            className="flex items-start gap-2 text-sm leading-snug text-neutral-300"
+            className="flex items-start gap-2 text-sm leading-snug text-ink/80"
           >
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400/70" />
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-heading/30" />
             {t}
           </li>
         ))}
@@ -75,15 +75,15 @@ function scoreBand(score: number): { label: string; className: string } {
   if (score >= 70)
     return {
       label: "Strong",
-      className: "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-300",
+      className: "bg-heading text-white",
     };
   if (score >= 45)
     return {
       label: "Balanced",
-      className: "border-sky-500/30 bg-sky-500/[0.06] text-sky-300",
+      className: "text-muted",
     };
   return {
     label: "Review",
-    className: "border-amber-500/30 bg-amber-500/[0.06] text-amber-300",
+    className: "border border-border text-muted",
   };
 }

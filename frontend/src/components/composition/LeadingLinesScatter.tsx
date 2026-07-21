@@ -39,13 +39,13 @@ export function LeadingLinesScatter({
     <div className="h-full w-full">
       <ResponsiveContainer width="100%" height="100%" minHeight={200}>
         <ScatterChart margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+          <CartesianGrid stroke="#e8e8e4" />
           <XAxis
             type="number"
             dataKey="x"
             domain={[0, 1]}
-            tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
-            axisLine={{ stroke: "rgba(255,255,255,0.12)" }}
+            tick={{ fill: "#999994", fontSize: 10 }}
+            axisLine={{ stroke: "#e8e8e4" }}
             tickLine={false}
           />
           <YAxis
@@ -53,15 +53,15 @@ export function LeadingLinesScatter({
             dataKey="y"
             domain={[0, 1]}
             reversed
-            tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
-            axisLine={{ stroke: "rgba(255,255,255,0.12)" }}
+            tick={{ fill: "#999994", fontSize: 10 }}
+            axisLine={{ stroke: "#e8e8e4" }}
             tickLine={false}
           />
           <ZAxis range={[50, 50]} />
           <Tooltip
-            cursor={{ stroke: "rgba(255,255,255,0.1)" }}
-            contentStyle={DARK_TOOLTIP}
-            labelStyle={{ color: "#e5e7eb" }}
+            cursor={{ stroke: "#e8e8e4" }}
+            contentStyle={LIGHT_TOOLTIP}
+            labelStyle={{ color: "#1c1c1a" }}
             itemStyle={{ color: "#22d3ee" }}
             formatter={(value) => Number(value).toFixed(3)}
           />
@@ -81,10 +81,10 @@ function round3(v: number): number {
   return Math.round(v * 1000) / 1000;
 }
 
-const DARK_TOOLTIP = {
-  background: "rgba(10,10,10,0.92)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: 12,
-  color: "#e5e7eb",
+const LIGHT_TOOLTIP = {
+  background: "#ffffff",
+  border: "1px solid #e8e8e4",
+  borderRadius: 2,
+  color: "#1c1c1a",
   fontSize: 12,
 } as const;

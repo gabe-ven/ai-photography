@@ -28,7 +28,7 @@ export function HistogramChart({ histogram }: HistogramChartProps) {
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
-        className="h-40 w-full rounded-lg bg-neutral-950/60 ring-1 ring-white/5"
+        className="h-40 w-full rounded-lg bg-bg ring-1 ring-border"
         aria-label="RGB histogram"
       >
         {CHANNELS.map(({ key, color }) => (
@@ -36,12 +36,12 @@ export function HistogramChart({ histogram }: HistogramChartProps) {
             key={key}
             d={areaPath(histogram[key], max)}
             fill={color}
-            fillOpacity={0.45}
-            style={{ mixBlendMode: "screen" }}
+            fillOpacity={0.55}
+            style={{ mixBlendMode: "multiply" }}
           />
         ))}
       </svg>
-      <div className="mt-2 flex justify-between text-[11px] text-neutral-500">
+      <div className="mt-2 flex justify-between text-[11px] text-muted">
         <span>Shadows</span>
         <span>Midtones</span>
         <span>Highlights</span>

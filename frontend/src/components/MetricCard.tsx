@@ -22,12 +22,12 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <motion.div
-      whileHover={{ y: -2, borderColor: "rgba(163, 163, 163, 0.5)" }}
+      whileHover={{ y: -2, borderColor: "#999994" }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4"
+      className="rounded-[2px] border border-border bg-surface p-4"
     >
       <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        <span className="font-mono text-xs uppercase tracking-widest text-muted">
           {label}
         </span>
         {description && (
@@ -35,7 +35,7 @@ export function MetricCard({
             <span
               tabIndex={0}
               aria-label={`About ${label}`}
-              className="cursor-help text-neutral-600 transition-colors hover:text-neutral-300 focus:text-neutral-300 focus:outline-none"
+              className="cursor-help text-muted transition-colors hover:text-ink focus:text-ink focus:outline-none"
             >
               &#9432;
             </span>
@@ -43,23 +43,23 @@ export function MetricCard({
         )}
       </div>
       <div className="mt-2 flex items-baseline gap-1">
-        <span className="text-2xl font-semibold tabular-nums text-neutral-100">
+        <span className="font-mono text-4xl font-medium tabular-nums text-heading">
           {value}
         </span>
-        {unit && <span className="text-sm text-neutral-500">{unit}</span>}
+        {unit && <span className="font-mono text-sm text-muted">{unit}</span>}
       </div>
-      {hint && <p className="mt-1 text-xs text-neutral-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
     </motion.div>
   );
 }
 
 export function MetricCardSkeleton() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4">
+    <div className="relative overflow-hidden rounded-[2px] border border-border bg-surface p-4">
       <ShimmerOverlay />
-      <div className="h-3 w-16 rounded bg-neutral-800" />
-      <div className="mt-3 h-7 w-20 rounded bg-neutral-800" />
-      <div className="mt-2 h-3 w-24 rounded bg-neutral-800/70" />
+      <div className="h-3 w-16 bg-border" />
+      <div className="mt-3 h-7 w-20 bg-border" />
+      <div className="mt-2 h-3 w-24 bg-border/70" />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
 interface SectionProps {
+  /** Editorial section number, e.g. "01". */
+  number: string;
   title: string;
   description?: string;
   /** Optional element rendered at the top-right (e.g. a status badge). */
@@ -9,22 +11,26 @@ interface SectionProps {
 }
 
 /**
- * A titled report section. The analysis report is a vertical stack of these,
- * so future panels (Composition, Lighting, AI Critique) drop in as siblings
- * without touching existing layout.
+ * A titled report section. Card-less by design — a thin hr plus a
+ * number/title header on the page background. Only the content inside
+ * (metric cards, InfoCards, etc.) is individually boxed.
  */
-export function Section({ title, description, action, children }: SectionProps) {
+export function Section({ number, title, description, action, children }: SectionProps) {
   return (
-    <section className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5">
-      <header className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-neutral-100">{title}</h2>
-          {description && (
-            <p className="mt-0.5 text-sm text-neutral-500">{description}</p>
-          )}
+    <section>
+      <hr className="border-border" />
+      <div className="mb-8 mt-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-xs text-muted">{number}</span>
+          <span className="font-mono text-xs uppercase tracking-widest text-muted">
+            {title}
+          </span>
         </div>
         {action}
-      </header>
+      </div>
+      {description && (
+        <p className="-mt-6 mb-8 max-w-2xl text-sm text-muted">{description}</p>
+      )}
       {children}
     </section>
   );

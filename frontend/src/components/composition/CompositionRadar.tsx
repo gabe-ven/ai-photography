@@ -27,25 +27,26 @@ export function CompositionRadar({
     <div className="h-full w-full">
       <ResponsiveContainer width="100%" height="100%" minHeight={320}>
         <RadarChart data={data} outerRadius="72%">
-          <PolarGrid stroke="rgba(255,255,255,0.12)" />
+          <PolarGrid stroke="#e8e8e4" />
           <PolarAngleAxis
             dataKey="axis"
-            tick={{ fill: "rgba(255,255,255,0.65)", fontSize: 11 }}
+            tick={{ fill: "#999994", fontSize: 11, fontFamily: "DM Mono, monospace" }}
           />
           <Radar
             name="Composition"
             dataKey="value"
-            stroke="#38bdf8"
-            fill="#38bdf8"
-            fillOpacity={0.35}
+            stroke="#0a0a08"
+            strokeWidth={2}
+            fill="#0a0a08"
+            fillOpacity={0.04}
             isAnimationActive
             animationDuration={900}
           />
           <Tooltip
-            cursor={{ stroke: "rgba(255,255,255,0.1)" }}
-            contentStyle={DARK_TOOLTIP}
-            labelStyle={{ color: "#e5e7eb" }}
-            itemStyle={{ color: "#7dd3fc" }}
+            cursor={{ stroke: "#e8e8e4" }}
+            contentStyle={LIGHT_TOOLTIP}
+            labelStyle={{ color: "#0a0a08" }}
+            itemStyle={{ color: "#0a0a08" }}
             formatter={(value) => [`${Number(value)}/100`, "Score"]}
           />
         </RadarChart>
@@ -54,10 +55,11 @@ export function CompositionRadar({
   );
 }
 
-const DARK_TOOLTIP = {
-  background: "rgba(10,10,10,0.92)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: 12,
-  color: "#e5e7eb",
+const LIGHT_TOOLTIP = {
+  background: "#ffffff",
+  border: "1px solid #e8e8e4",
+  borderRadius: 2,
+  color: "#1c1c1a",
   fontSize: 12,
+  fontFamily: "DM Mono, monospace",
 } as const;

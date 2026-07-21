@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Section } from "@/components/Section";
-import { fadeUpIn } from "@/lib/motionVariants";
+import { sectionReveal } from "@/lib/motionVariants";
 import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 import { CompositionMetrics } from "./CompositionMetrics";
 import { CompositionOverlay, type OverlayToggles } from "./CompositionOverlay";
@@ -33,16 +33,16 @@ export function CompositionDashboard({
   error = null,
 }: CompositionDashboardProps) {
   return (
-    <motion.div {...fadeUpIn(0.15)}>
-      <Section title="Composition analysis" description={SECTION_DESCRIPTION}>
+    <motion.div {...sectionReveal(0)}>
+      <Section number="02" title="COMPOSITION" description={SECTION_DESCRIPTION}>
         {loading ? (
-          <p className="text-sm text-neutral-500">Analyzing composition…</p>
+          <p className="text-sm text-muted">Analyzing composition…</p>
         ) : error ? (
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <div className="border border-red-500/40 bg-red-500/10 px-4 py-3 font-mono text-sm text-red-300">
             {error}
           </div>
         ) : !composition || !imageUrl ? (
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted">
             Run the analysis to see the composition overlays and metrics.
           </p>
         ) : (
@@ -112,10 +112,10 @@ function DashboardContent({
               onClick={() => toggle(def.key)}
               className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${
                 !def.available
-                  ? "cursor-not-allowed border-neutral-800 text-neutral-600"
+                  ? "cursor-not-allowed border-border text-muted/50"
                   : active
-                    ? "border-neutral-500 bg-neutral-800 text-neutral-100"
-                    : "border-neutral-700 text-neutral-400 hover:bg-neutral-900"
+                    ? "border-heading bg-heading text-white"
+                    : "border-border text-muted hover:border-heading/40"
               }`}
             >
               <span
@@ -125,7 +125,7 @@ function DashboardContent({
               />
               {def.label}
               {!def.available && (
-                <span className="text-[10px] text-neutral-600">(none)</span>
+                <span className="text-[10px] text-muted/50">(none)</span>
               )}
             </button>
           );
