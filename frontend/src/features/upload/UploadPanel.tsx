@@ -79,18 +79,18 @@ export function UploadPanel() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="mx-auto flex max-w-2xl flex-col gap-6 py-16"
+        className="mx-auto flex max-w-2xl flex-col items-center gap-6 py-16"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 180, damping: 24 }}
-          className="overflow-hidden border border-border bg-surface"
+          className="inline-block max-w-full overflow-hidden border border-border bg-surface"
         >
           <img
             src={previewUrl}
             alt={file.name}
-            className="max-h-[520px] w-full object-contain"
+            className="block max-h-[520px] w-auto max-w-full"
           />
           <p className="truncate px-4 py-3 font-mono text-xs text-muted">{file.name}</p>
         </motion.div>
@@ -130,12 +130,12 @@ export function UploadPanel() {
       className="space-y-16 py-16"
     >
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="flex flex-col gap-3">
-          <div className="overflow-hidden border border-border bg-surface">
+        <div className="flex flex-col items-start gap-3">
+          <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
             <img
               src={previewUrl}
               alt={file.name}
-              className="max-h-[520px] w-full object-contain"
+              className="block max-h-[520px] w-auto max-w-full"
             />
           </div>
           <button
@@ -214,11 +214,11 @@ function AnalyzingView({
       transition={{ duration: 0.3 }}
       className="mx-auto flex max-w-2xl flex-col items-center gap-8 py-16"
     >
-      <div className="relative w-full overflow-hidden border border-border bg-surface">
+      <div className="relative inline-block max-w-full overflow-hidden border border-border bg-surface">
         <img
           src={previewUrl}
           alt={fileName}
-          className="max-h-[480px] w-full object-contain"
+          className="block max-h-[480px] w-auto max-w-full"
         />
 
         {/* Sweeping glow band + bright scan edge. */}
