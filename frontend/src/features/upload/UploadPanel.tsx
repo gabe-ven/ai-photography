@@ -129,7 +129,7 @@ export function UploadPanel() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="space-y-16 py-16"
     >
-      <div className="w-full max-w-xl overflow-hidden border border-border bg-surface">
+      <div className="mx-auto w-full max-w-xl overflow-hidden border border-border bg-surface">
         <img src={previewUrl} alt={file.name} className="block h-auto w-full" />
         <div className="flex items-center justify-between gap-4 px-4 py-3">
           <div className="min-w-0 flex-1">
