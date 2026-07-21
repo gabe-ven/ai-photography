@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { DominantColorPalette } from "@/components/DominantColorPalette";
+import { DominantColors } from "@/components/DominantColors";
 import { LuminanceChart } from "@/components/LuminanceChart";
 import { MetricCard, MetricCardSkeleton } from "@/components/MetricCard";
 import { RGBHistogram } from "@/components/RGBHistogram";
@@ -112,10 +112,7 @@ function VisionContent({ vision }: { vision: VisionInfo }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted">
-            Dominant colors
-          </h3>
-          <DominantColorPalette colors={vision.dominant_colors} />
+          <DominantColors colors={vision.dominant_colors} />
         </div>
         <div>
           <RGBHistogram histogram={vision.histogram} />
