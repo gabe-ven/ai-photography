@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { DominantColorPalette } from "@/components/DominantColorPalette";
+import { LuminanceChart } from "@/components/LuminanceChart";
 import { MetricCard, MetricCardSkeleton } from "@/components/MetricCard";
 import { RGBHistogram } from "@/components/RGBHistogram";
 import { Section } from "@/components/Section";
@@ -118,6 +119,7 @@ function VisionContent({ vision }: { vision: VisionInfo }) {
         </div>
         <div>
           <RGBHistogram histogram={vision.histogram} />
+          <LuminanceChart histogram={vision.histogram} />
         </div>
       </div>
     </div>
