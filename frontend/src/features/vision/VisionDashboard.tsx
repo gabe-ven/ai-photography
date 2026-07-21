@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { DominantColorPalette } from "@/components/DominantColorPalette";
-import { HistogramChart } from "@/components/HistogramChart";
 import { MetricCard, MetricCardSkeleton } from "@/components/MetricCard";
+import { RGBHistogram } from "@/components/RGBHistogram";
 import { Section } from "@/components/Section";
 import {
   sectionReveal,
@@ -117,10 +117,7 @@ function VisionContent({ vision }: { vision: VisionInfo }) {
           <DominantColorPalette colors={vision.dominant_colors} />
         </div>
         <div>
-          <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted">
-            RGB histogram
-          </h3>
-          <HistogramChart histogram={vision.histogram} />
+          <RGBHistogram histogram={vision.histogram} />
         </div>
       </div>
     </div>
