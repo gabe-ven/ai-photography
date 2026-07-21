@@ -129,41 +129,17 @@ export function UploadPanel() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="space-y-16 py-16"
     >
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="overflow-hidden border border-border bg-surface">
-          <img
-            src={previewUrl}
-            alt={file.name}
-            className="max-h-[420px] w-full object-contain"
-          />
-          {result && (
-            <div className="px-4 py-3">
-              <CameraInfoCard exif={result.exif} />
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <motion.button
-            onClick={analyze}
-            initial="rest"
-            whileHover="hover"
-            className="flex-1 bg-heading px-10 py-4 font-mono text-xs uppercase tracking-widest text-white transition-colors hover:bg-zinc-800"
-          >
-            Analyze{" "}
-            <motion.span
-              className="inline-block"
-              variants={{ rest: { x: 0 }, hover: { x: 6 } }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            >
-              →
-            </motion.span>
-          </motion.button>
+      <div className="w-full max-w-xl overflow-hidden border border-border bg-surface">
+        <img src={previewUrl} alt={file.name} className="block h-auto w-full" />
+        <div className="flex items-center justify-between gap-4 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            {result && <CameraInfoCard exif={result.exif} />}
+          </div>
           <button
             onClick={reset}
-            className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+            className="shrink-0 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-heading"
           >
-            Choose another
+            Choose another →
           </button>
         </div>
       </div>
