@@ -22,8 +22,8 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <motion.div
-      whileHover={{ y: -2, borderColor: "#999994" }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      whileHover={{ y: -3, borderColor: "#999994" }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className="rounded-[2px] border border-border bg-surface p-4"
     >
       <div className="flex items-center gap-1.5">

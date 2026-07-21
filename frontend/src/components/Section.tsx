@@ -1,4 +1,6 @@
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { HR_SPRING } from "@/lib/motionVariants";
 
 interface SectionProps {
   /** Editorial section number, e.g. "01". */
@@ -18,7 +20,14 @@ interface SectionProps {
 export function Section({ number, title, description, action, children }: SectionProps) {
   return (
     <section>
-      <hr className="border-border" />
+      <motion.hr
+        className="border-border"
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={HR_SPRING}
+        style={{ transformOrigin: "left" }}
+      />
       <div className="mb-8 mt-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-mono text-xs text-muted">{number}</span>

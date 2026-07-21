@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { STAGGER_VIEWPORT, staggerContainer, staggerItem } from "@/lib/motionVariants";
 import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 
 type Status = "good" | "warn" | "info" | "neutral";
@@ -174,13 +175,19 @@ export function CompositionMetrics({
   const metrics = buildMetrics(composition, semantic);
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {metrics.map((m, i) => (
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="show"
+      viewport={STAGGER_VIEWPORT}
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+    >
+      {metrics.map((m) => (
         <motion.div
           key={m.key}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: i * 0.04 }}
+          variants={staggerItem}
+          whileHover={{ y: -3, borderColor: "#999994" }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
           className="rounded-[2px] border border-border bg-surface p-4"
         >
           <div className="flex items-center justify-between">
@@ -211,7 +218,7 @@ export function CompositionMetrics({
           <p className="mt-1 text-xs leading-snug text-muted">{m.explanation}</p>
         </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 

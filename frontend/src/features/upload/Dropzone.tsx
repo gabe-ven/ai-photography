@@ -30,7 +30,7 @@ export function Dropzone({ onFile }: DropzoneProps) {
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       animate={{
-        scale: dragging ? 1.01 : 1,
+        scale: dragging ? 1.015 : 1,
         borderColor: dragging ? "#0a0a08" : "#e8e8e4",
       }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}

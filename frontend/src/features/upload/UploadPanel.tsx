@@ -4,6 +4,7 @@ import { CompositionDashboard } from "@/components/composition/CompositionDashbo
 import { AICritiqueDashboard } from "@/features/ai/AICritiqueDashboard";
 import { FujifilmRecipeSection } from "@/features/ai/FujifilmRecipeSection";
 import { VisionDashboard } from "@/features/vision/VisionDashboard";
+import { HERO_SPRING, SUBTITLE_SPRING } from "@/lib/motionVariants";
 import { CameraInfoCard } from "./CameraInfoCard";
 import { Dropzone } from "./Dropzone";
 import { useImageAnalysis } from "./useImageAnalysis";
@@ -31,17 +32,32 @@ export function UploadPanel() {
           AI Photography Critique / V2.0
         </p>
         <h1 className="mt-6 leading-[0.95]">
-          <span className="block font-serif text-7xl italic tracking-tight text-heading md:text-9xl">
+          <motion.span
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={HERO_SPRING}
+            className="block font-serif text-7xl italic tracking-tight text-heading md:text-9xl"
+          >
             Photographer
-          </span>
-          <span className="block font-sans text-7xl font-black tracking-tighter text-heading md:text-9xl">
+          </motion.span>
+          <motion.span
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ ...HERO_SPRING, delay: 0.1 }}
+            className="block font-sans text-7xl font-black tracking-tighter text-heading md:text-9xl"
+          >
             Brain.
-          </span>
+          </motion.span>
         </h1>
-        <p className="mt-6 max-w-md text-lg font-light text-muted">
+        <motion.p
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ ...SUBTITLE_SPRING, delay: 0.25 }}
+          className="mt-6 max-w-md text-lg font-light text-muted"
+        >
           Upload a photograph. Get an AI-powered critique grounded in real
           measurements.
-        </p>
+        </motion.p>
         <div className="mt-12">
           <Dropzone onFile={selectFile} />
         </div>
@@ -68,7 +84,7 @@ export function UploadPanel() {
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          transition={{ type: "spring", stiffness: 180, damping: 24 }}
           className="overflow-hidden border border-border bg-surface"
         >
           <img
@@ -79,12 +95,21 @@ export function UploadPanel() {
           <p className="truncate px-4 py-3 font-mono text-xs text-muted">{file.name}</p>
         </motion.div>
         <div className="flex justify-center gap-3">
-          <button
+          <motion.button
             onClick={analyze}
+            initial="rest"
+            whileHover="hover"
             className="bg-heading px-10 py-4 font-mono text-xs uppercase tracking-widest text-white transition-colors hover:bg-zinc-800"
           >
-            Analyze <span>→</span>
-          </button>
+            Analyze{" "}
+            <motion.span
+              className="inline-block"
+              variants={{ rest: { x: 0 }, hover: { x: 6 } }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+              →
+            </motion.span>
+          </motion.button>
           <button
             onClick={reset}
             className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
@@ -119,12 +144,21 @@ export function UploadPanel() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <motion.button
             onClick={analyze}
+            initial="rest"
+            whileHover="hover"
             className="flex-1 bg-heading px-10 py-4 font-mono text-xs uppercase tracking-widest text-white transition-colors hover:bg-zinc-800"
           >
-            Analyze <span>→</span>
-          </button>
+            Analyze{" "}
+            <motion.span
+              className="inline-block"
+              variants={{ rest: { x: 0 }, hover: { x: 6 } }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+              →
+            </motion.span>
+          </motion.button>
           <button
             onClick={reset}
             className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"

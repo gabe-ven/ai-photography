@@ -3,7 +3,12 @@ import { DominantColorPalette } from "@/components/DominantColorPalette";
 import { HistogramChart } from "@/components/HistogramChart";
 import { MetricCard, MetricCardSkeleton } from "@/components/MetricCard";
 import { Section } from "@/components/Section";
-import { sectionReveal, staggerContainer, staggerItem } from "@/lib/motionVariants";
+import {
+  sectionReveal,
+  STAGGER_VIEWPORT,
+  staggerContainer,
+  staggerItem,
+} from "@/lib/motionVariants";
 import type { VisionInfo } from "@/types/analysis";
 
 interface VisionDashboardProps {
@@ -48,7 +53,8 @@ function VisionContent({ vision }: { vision: VisionInfo }) {
       <motion.div
         variants={staggerContainer}
         initial="hidden"
-        animate="show"
+        whileInView="show"
+        viewport={STAGGER_VIEWPORT}
         className="grid grid-cols-2 gap-3 sm:grid-cols-3"
       >
         <motion.div variants={staggerItem}>
