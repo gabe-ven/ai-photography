@@ -129,24 +129,24 @@ export function UploadPanel() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="space-y-16 py-16"
     >
-      <div className="mx-auto flex max-w-2xl flex-col items-center">
-        <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
-          <img
-            src={previewUrl}
-            alt={file.name}
-            className="block max-h-[520px] w-auto max-w-full"
-          />
-        </div>
-        <div className="mt-3 flex w-full max-w-xl items-center justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            {result && <CameraInfoCard exif={result.exif} />}
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="flex flex-col gap-3">
+          <div className="overflow-hidden border border-border bg-surface">
+            <img
+              src={previewUrl}
+              alt={file.name}
+              className="max-h-[520px] w-full object-contain"
+            />
           </div>
           <button
             onClick={reset}
-            className="shrink-0 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-heading"
+            className="self-start border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
           >
             Choose another →
           </button>
+        </div>
+        <div className="flex flex-col justify-center gap-6">
+          {result && <CameraInfoCard exif={result.exif} />}
         </div>
       </div>
 
