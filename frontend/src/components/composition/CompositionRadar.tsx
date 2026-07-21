@@ -1,11 +1,4 @@
-import {
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { ResponsiveRadar } from "@nivo/radar";
 import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 import { applySemanticToProfile, buildCompositionProfile } from "./compositionProfile";
 
@@ -24,42 +17,29 @@ export function CompositionRadar({
   const data = applySemanticToProfile(buildCompositionProfile(composition), semantic);
 
   return (
-    <div className="h-full w-full">
-      <ResponsiveContainer width="100%" height="100%" minHeight={320}>
-        <RadarChart data={data} outerRadius="72%">
-          <PolarGrid stroke="#e8e8e4" />
-          <PolarAngleAxis
-            dataKey="axis"
-            tick={{ fill: "#999994", fontSize: 11, fontFamily: "DM Mono, monospace" }}
-          />
-          <Radar
-            name="Composition"
-            dataKey="value"
-            stroke="#0a0a08"
-            strokeWidth={2}
-            fill="#0a0a08"
-            fillOpacity={0.04}
-            isAnimationActive
-            animationDuration={900}
-          />
-          <Tooltip
-            cursor={{ stroke: "#e8e8e4" }}
-            contentStyle={LIGHT_TOOLTIP}
-            labelStyle={{ color: "#0a0a08" }}
-            itemStyle={{ color: "#0a0a08" }}
-            formatter={(value) => [`${Number(value)}/100`, "Score"]}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
+    <div className="h-full w-full" style={{ minHeight: 320 }}>
+      <ResponsiveRadar
+        data={data as unknown as Record<string, unknown>[]}
+        keys={["value"]}
+        indexBy="axis"
+        maxValue={100}
+        margin={{ top: 30, right: 60, bottom: 30, left: 60 }}
+        gridLabelOffset={20}
+        dotSize={5}
+        dotColor="#0a0a08"
+        dotBorderWidth={0}
+        colors={["#0a0a08"]}
+        fillOpacity={0.06}
+        blendMode="multiply"
+        animate
+        motionConfig="gentle"
+        isInteractive
+        theme={{
+          background: "transparent",
+          text: { fontFamily: "DM Mono, monospace", fontSize: 10 },
+          grid: { line: { stroke: "#e8e8e4", strokeWidth: 0.5 } },
+        }}
+      />
     </div>
   );
 }
-
-const LIGHT_TOOLTIP = {
-  background: "#ffffff",
-  border: "1px solid #e8e8e4",
-  borderRadius: 2,
-  color: "#1c1c1a",
-  fontSize: 12,
-  fontFamily: "DM Mono, monospace",
-} as const;
