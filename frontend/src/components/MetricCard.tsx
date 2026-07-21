@@ -1,4 +1,6 @@
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { ShimmerOverlay } from "./Shimmer";
 import { Tooltip } from "./Tooltip";
 
 interface MetricCardProps {
@@ -19,7 +21,11 @@ export function MetricCard({
   description,
 }: MetricCardProps) {
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4">
+    <motion.div
+      whileHover={{ y: -2, borderColor: "rgba(163, 163, 163, 0.5)" }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4"
+    >
       <div className="flex items-center gap-1.5">
         <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
           {label}
@@ -43,16 +49,17 @@ export function MetricCard({
         {unit && <span className="text-sm text-neutral-500">{unit}</span>}
       </div>
       {hint && <p className="mt-1 text-xs text-neutral-500">{hint}</p>}
-    </div>
+    </motion.div>
   );
 }
 
 export function MetricCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4">
-      <div className="h-3 w-16 animate-pulse rounded bg-neutral-800" />
-      <div className="mt-3 h-7 w-20 animate-pulse rounded bg-neutral-800" />
-      <div className="mt-2 h-3 w-24 animate-pulse rounded bg-neutral-800/70" />
+    <div className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4">
+      <ShimmerOverlay />
+      <div className="h-3 w-16 rounded bg-neutral-800" />
+      <div className="mt-3 h-7 w-20 rounded bg-neutral-800" />
+      <div className="mt-2 h-3 w-24 rounded bg-neutral-800/70" />
     </div>
   );
 }

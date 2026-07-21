@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
-import type { CompositionInfo } from "@/types/analysis";
+import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 
 type Status = "good" | "warn" | "info" | "neutral";
 
@@ -18,6 +18,7 @@ interface MetricDef {
   value: string;
   explanation: string;
   status: Status;
+  aiSourced?: boolean;
 }
 
 function formatRegion(region: string): string {
@@ -27,7 +28,10 @@ function formatRegion(region: string): string {
     .join(" ");
 }
 
-function buildMetrics(c: CompositionInfo): MetricDef[] {
+function buildMetrics(
+  c: CompositionInfo,
+  semantic?: SemanticComposition | null,
+): MetricDef[] {
   const rot = c.rule_of_thirds;
   const ll = c.leading_lines;
   const sym = c.symmetry;
@@ -36,27 +40,60 @@ function buildMetrics(c: CompositionInfo): MetricDef[] {
   const ed = c.edge_density;
   const hz = c.horizon;
   const symStrength = Math.max(sym.vertical, sym.horizontal);
+  const sll = semantic?.leading_lines;
+  const srot = semantic?.rule_of_thirds;
+  const sns = semantic?.negative_space;
 
   return [
     {
       key: "thirds",
       label: "Rule of Thirds",
       icon: <GridIcon />,
-      value: `${Math.round(rot.score * 100)}%`,
-      explanation: rot.follows_rule
-        ? "Subject aligns with a power point."
-        : "Subject sits away from the thirds intersections.",
-      status: rot.follows_rule ? "good" : "warn",
+      value:
+        srot?.score != null
+          ? `${Math.round(srot.score)}%`
+          : `${Math.round(rot.score * 100)}%`,
+      explanation:
+        srot?.reasoning ??
+        (rot.follows_rule
+          ? "Subject aligns with a power point."
+          : "Subject sits away from the thirds intersections."),
+      status:
+        srot?.score != null
+          ? srot.score >= 50
+            ? "good"
+            : "warn"
+          : rot.follows_rule
+            ? "good"
+            : "warn",
+      aiSourced: srot?.score != null,
     },
     {
       key: "lines",
       label: "Leading Lines",
       icon: <LinesIcon />,
-      value: String(ll.line_count),
-      explanation: ll.has_leading_lines
-        ? `Dominant angle ~${ll.dominant_angle}°.`
-        : "No strong leading lines detected.",
-      status: ll.has_leading_lines ? "good" : "neutral",
+      value:
+        sll && (sll.strength != null || sll.present != null)
+          ? sll.present
+            ? sll.strength != null
+              ? `${Math.round(sll.strength)}%`
+              : "Detected"
+            : "None"
+          : String(ll.line_count),
+      explanation:
+        sll?.description ??
+        (ll.has_leading_lines
+          ? `Dominant angle ~${ll.dominant_angle}°.`
+          : "No strong leading lines detected."),
+      status:
+        sll && (sll.strength != null || sll.present != null)
+          ? sll.present
+            ? "good"
+            : "neutral"
+          : ll.has_leading_lines
+            ? "good"
+            : "neutral",
+      aiSourced: !!(sll && (sll.strength != null || sll.present != null)),
     },
     {
       key: "symmetry",
@@ -73,13 +110,26 @@ function buildMetrics(c: CompositionInfo): MetricDef[] {
       // subject_excluded_ratio measures empty space *around* the subject —
       // the photographic definition. The raw ratio (shown in the explanation)
       // also counts the subject's own flat areas.
-      value: `${Math.round(ns.subject_excluded_ratio * 100)}%`,
-      explanation: `${
-        ns.has_significant_negative_space
-          ? "Plenty of breathing room"
-          : "Densely filled frame"
-      } (${Math.round(ns.negative_space_ratio * 100)}% incl. subject).`,
-      status: ns.has_significant_negative_space ? "good" : "neutral",
+      value:
+        sns?.score != null
+          ? `${Math.round(sns.score)}%`
+          : `${Math.round(ns.subject_excluded_ratio * 100)}%`,
+      explanation:
+        sns?.reasoning ??
+        `${
+          ns.has_significant_negative_space
+            ? "Plenty of breathing room"
+            : "Densely filled frame"
+        } (${Math.round(ns.negative_space_ratio * 100)}% incl. subject).`,
+      status:
+        sns?.score != null
+          ? sns.score >= 50
+            ? "good"
+            : "neutral"
+          : ns.has_significant_negative_space
+            ? "good"
+            : "neutral",
+      aiSourced: sns?.score != null,
     },
     {
       key: "subject",
@@ -114,8 +164,14 @@ function buildMetrics(c: CompositionInfo): MetricDef[] {
   ];
 }
 
-export function CompositionMetrics({ composition }: { composition: CompositionInfo }) {
-  const metrics = buildMetrics(composition);
+export function CompositionMetrics({
+  composition,
+  semantic,
+}: {
+  composition: CompositionInfo;
+  semantic?: SemanticComposition | null;
+}) {
+  const metrics = buildMetrics(composition, semantic);
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -133,6 +189,11 @@ export function CompositionMetrics({ composition }: { composition: CompositionIn
               <span className="text-xs font-medium uppercase tracking-wide">
                 {m.label}
               </span>
+              {m.aiSourced && (
+                <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-300">
+                  AI
+                </span>
+              )}
             </div>
             <span
               className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase ${STATUS_STYLES[m.status]}`}

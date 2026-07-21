@@ -3,7 +3,11 @@
 // fabricated. Shared by CompositionRadar (the chart) and CompositionSummary
 // (the textual takeaways) so both stay in lockstep.
 
-import type { CompositionInfo, EdgeRegions } from "@/types/analysis";
+import type {
+  CompositionInfo,
+  EdgeRegions,
+  SemanticComposition,
+} from "@/types/analysis";
 
 export interface ProfileAxis {
   /** Human-readable axis label shown on the radar. */
@@ -95,6 +99,34 @@ export function buildCompositionProfile(c: CompositionInfo): ProfileAxis[] {
 
 function round1(v: number): number {
   return Math.round(v * 10) / 10;
+}
+
+/**
+ * Override the three axes the VLM also scores (Rule of Thirds, Leading Lines,
+ * Negative Space) with its semantic values when present. VLM scores are already
+ * 0–100 (unlike the 0–1 CV ratios), so they're used as-is. Any missing field
+ * leaves the CV-derived axis untouched.
+ */
+export function applySemanticToProfile(
+  profile: ProfileAxis[],
+  semantic: SemanticComposition | null | undefined,
+): ProfileAxis[] {
+  if (!semantic) return profile;
+  return profile.map((ax) => {
+    if (ax.axis === "Rule of Thirds" && semantic.rule_of_thirds?.score != null) {
+      return { ...ax, value: round1(semantic.rule_of_thirds.score), applicable: true };
+    }
+    if (ax.axis === "Leading Lines" && semantic.leading_lines) {
+      const ll = semantic.leading_lines;
+      if (ll.strength != null || ll.present != null) {
+        return { ...ax, value: round1(ll.strength ?? 0), applicable: ll.present ?? false };
+      }
+    }
+    if (ax.axis === "Negative Space" && semantic.negative_space?.score != null) {
+      return { ...ax, value: round1(semantic.negative_space.score), applicable: true };
+    }
+    return ax;
+  });
 }
 
 /** Mean of applicable radar axis values — an overall composition score.

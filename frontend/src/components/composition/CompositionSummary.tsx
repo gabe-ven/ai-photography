@@ -1,5 +1,9 @@
-import type { CompositionInfo } from "@/types/analysis";
-import { buildCompositionProfile, overallScore } from "./compositionProfile";
+import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
+import {
+  applySemanticToProfile,
+  buildCompositionProfile,
+  overallScore,
+} from "./compositionProfile";
 
 /**
  * Presentational summary card (no Recharts). Surfaces an overall composition
@@ -8,10 +12,15 @@ import { buildCompositionProfile, overallScore } from "./compositionProfile";
  */
 export function CompositionSummary({
   composition,
+  semantic,
 }: {
   composition: CompositionInfo;
+  semantic?: SemanticComposition | null;
 }) {
-  const profile = buildCompositionProfile(composition);
+  const profile = applySemanticToProfile(
+    buildCompositionProfile(composition),
+    semantic,
+  );
   const score = overallScore(profile);
 
   const applicable = profile.filter((p) => p.applicable);

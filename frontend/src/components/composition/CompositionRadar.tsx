@@ -6,8 +6,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import type { CompositionInfo } from "@/types/analysis";
-import { buildCompositionProfile } from "./compositionProfile";
+import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
+import { applySemanticToProfile, buildCompositionProfile } from "./compositionProfile";
 
 /**
  * The composition profile radar — the centerpiece of the section. Plots a
@@ -16,10 +16,12 @@ import { buildCompositionProfile } from "./compositionProfile";
  */
 export function CompositionRadar({
   composition,
+  semantic,
 }: {
   composition: CompositionInfo;
+  semantic?: SemanticComposition | null;
 }) {
-  const data = buildCompositionProfile(composition);
+  const data = applySemanticToProfile(buildCompositionProfile(composition), semantic);
 
   return (
     <div className="h-full w-full">

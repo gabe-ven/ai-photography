@@ -1,10 +1,8 @@
+import { motion } from "framer-motion";
 import { Section } from "@/components/Section";
-import type {
-  AIAnalysis,
-  CameraSettings,
-  FujifilmRecipe,
-  SemanticComposition,
-} from "@/types/analysis";
+import { ShimmerOverlay } from "@/components/Shimmer";
+import { fadeUpIn, staggerContainer, staggerItem } from "@/lib/motionVariants";
+import type { AIAnalysis, CameraSettings, FujifilmRecipe } from "@/types/analysis";
 
 interface AICritiqueDashboardProps {
   ai: AIAnalysis | null;
@@ -21,33 +19,35 @@ export function AICritiqueDashboard({
   error = null,
 }: AICritiqueDashboardProps) {
   return (
-    <Section
-      title="AI critique"
-      description={SECTION_DESCRIPTION}
-      action={
-        loading ? (
-          <span className="animate-pulse rounded-full bg-violet-500/15 px-3 py-1 text-xs font-medium text-violet-300">
-            Thinking…
-          </span>
-        ) : undefined
-      }
-    >
-      {loading ? (
-        <CritiqueSkeleton />
-      ) : error ? (
-        <Banner tone="error">{error}</Banner>
-      ) : !ai ? (
-        <p className="text-sm text-neutral-500">
-          Run the analysis to generate an AI critique.
-        </p>
-      ) : !ai.available ? (
-        <Banner tone="muted">
-          {ai.reason ?? "AI analysis is unavailable."}
-        </Banner>
-      ) : (
-        <CritiqueContent ai={ai} />
-      )}
-    </Section>
+    <motion.div {...fadeUpIn(0.3)}>
+      <Section
+        title="AI critique"
+        description={SECTION_DESCRIPTION}
+        action={
+          loading ? (
+            <span className="animate-pulse rounded-full bg-violet-500/15 px-3 py-1 text-xs font-medium text-violet-300">
+              Thinking…
+            </span>
+          ) : undefined
+        }
+      >
+        {loading ? (
+          <CritiqueSkeleton />
+        ) : error ? (
+          <Banner tone="error">{error}</Banner>
+        ) : !ai ? (
+          <p className="text-sm text-neutral-500">
+            Run the analysis to generate an AI critique.
+          </p>
+        ) : !ai.available ? (
+          <Banner tone="muted">
+            {ai.reason ?? "AI analysis is unavailable."}
+          </Banner>
+        ) : (
+          <CritiqueContent ai={ai} />
+        )}
+      </Section>
+    </motion.div>
   );
 }
 
@@ -79,50 +79,68 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="grid gap-4 lg:grid-cols-2"
+      >
         {ai.subject && (ai.subject.primary || ai.subject.description) && (
-          <InfoCard title="Subject">
-            {ai.subject.primary && (
-              <p className="font-medium text-neutral-200">{ai.subject.primary}</p>
-            )}
-            {ai.subject.description && (
-              <p className="mt-1 text-sm text-neutral-400">
-                {ai.subject.description}
-              </p>
-            )}
-          </InfoCard>
+          <motion.div variants={staggerItem}>
+            <InfoCard title="Subject">
+              {ai.subject.primary && (
+                <p className="font-medium text-neutral-200">{ai.subject.primary}</p>
+              )}
+              {ai.subject.description && (
+                <p className="mt-1 text-sm text-neutral-400">
+                  {ai.subject.description}
+                </p>
+              )}
+            </InfoCard>
+          </motion.div>
         )}
 
         {ai.lighting && (ai.lighting.summary || ai.lighting.direction) && (
-          <InfoCard title="Lighting">
-            {ai.lighting.summary && (
-              <p className="text-sm text-neutral-300">{ai.lighting.summary}</p>
-            )}
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Chip label="Direction" value={ai.lighting.direction} />
-              <Chip label="Quality" value={ai.lighting.quality} />
-              <Chip label="Time" value={ai.lighting.time_of_day} />
-            </div>
-          </InfoCard>
+          <motion.div variants={staggerItem}>
+            <InfoCard title="Lighting">
+              {ai.lighting.summary && (
+                <p className="text-sm text-neutral-300">{ai.lighting.summary}</p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Chip label="Direction" value={ai.lighting.direction} />
+                <Chip label="Quality" value={ai.lighting.quality} />
+                <Chip label="Time" value={ai.lighting.time_of_day} />
+              </div>
+            </InfoCard>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {ai.camera_settings && <CameraSettingsCard settings={ai.camera_settings} />}
 
       {ai.composition_critique && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 lg:grid-cols-2"
+        >
           {ai.composition_critique.strengths.length > 0 && (
-            <InfoCard title="What works">
-              <BulletList items={ai.composition_critique.strengths} tone="good" />
-            </InfoCard>
+            <motion.div variants={staggerItem}>
+              <InfoCard title="What works">
+                <BulletList items={ai.composition_critique.strengths} tone="good" />
+              </InfoCard>
+            </motion.div>
           )}
           {ai.composition_critique.improvements.length > 0 && (
-            <InfoCard title="What to improve">
-              <BulletList
-                items={ai.composition_critique.improvements}
-                tone="suggest"
-              />
-            </InfoCard>
+            <motion.div variants={staggerItem}>
+              <InfoCard title="What to improve">
+                <BulletList
+                  items={ai.composition_critique.improvements}
+                  tone="suggest"
+                />
+              </InfoCard>
+            </motion.div>
           )}
           {ai.composition_critique.overall && (
             <div className="lg:col-span-2">
@@ -131,11 +149,7 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
               </p>
             </div>
           )}
-        </div>
-      )}
-
-      {ai.semantic_composition && (
-        <SemanticCompositionSection semantic={ai.semantic_composition} />
+        </motion.div>
       )}
 
       {ai.recreation_guide.length > 0 && (
@@ -207,87 +221,6 @@ function CameraSettingsCard({ settings }: { settings: CameraSettings }) {
         </p>
       )}
     </InfoCard>
-  );
-}
-
-function SemanticCompositionSection({
-  semantic,
-}: {
-  semantic: SemanticComposition;
-}) {
-  const ll = semantic.leading_lines;
-  const rot = semantic.rule_of_thirds;
-  const ns = semantic.negative_space;
-
-  if (!ll && !rot && !ns) return null;
-
-  return (
-    <div>
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
-        AI Composition Read
-      </h3>
-      <div className="grid gap-4 lg:grid-cols-3">
-        {ll && (
-          <InfoCard title="Leading Lines">
-            <div className="mb-2">
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  ll.present
-                    ? "bg-emerald-500/15 text-emerald-300"
-                    : "bg-neutral-700/50 text-neutral-400"
-                }`}
-              >
-                {ll.present ? "Detected" : "None"}
-              </span>
-            </div>
-            {ll.present && ll.strength != null && <ScoreBar value={ll.strength} />}
-            {ll.description && (
-              <p className="mt-2 text-sm leading-relaxed text-neutral-400">
-                {ll.description}
-              </p>
-            )}
-          </InfoCard>
-        )}
-        {rot && (
-          <InfoCard title="Rule of Thirds">
-            {rot.score != null && <ScoreBar value={rot.score} />}
-            {rot.reasoning && (
-              <p className="mt-2 text-sm leading-relaxed text-neutral-400">
-                {rot.reasoning}
-              </p>
-            )}
-          </InfoCard>
-        )}
-        {ns && (
-          <InfoCard title="Negative Space">
-            {ns.score != null && <ScoreBar value={ns.score} />}
-            {ns.reasoning && (
-              <p className="mt-2 text-sm leading-relaxed text-neutral-400">
-                {ns.reasoning}
-              </p>
-            )}
-          </InfoCard>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar({ value }: { value: number }) {
-  const pct = Math.max(0, Math.min(100, Math.round(value)));
-  return (
-    <div>
-      <div className="mb-1 flex items-baseline justify-between">
-        <span className="font-mono text-lg text-neutral-100">{pct}</span>
-        <span className="text-xs text-neutral-500">/ 100</span>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
-        <div
-          className="h-full rounded-full bg-emerald-400"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
   );
 }
 
@@ -417,17 +350,31 @@ function Banner({
 function CritiqueSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="h-5 w-3/4 animate-pulse rounded bg-neutral-800" />
+      <div className="relative h-5 w-3/4 overflow-hidden rounded bg-neutral-800">
+        <ShimmerOverlay />
+      </div>
       <div className="flex gap-2">
-        <div className="h-6 w-20 animate-pulse rounded-full bg-neutral-800" />
-        <div className="h-6 w-16 animate-pulse rounded-full bg-neutral-800" />
-        <div className="h-6 w-24 animate-pulse rounded-full bg-neutral-800" />
+        <div className="relative h-6 w-20 overflow-hidden rounded-full bg-neutral-800">
+          <ShimmerOverlay />
+        </div>
+        <div className="relative h-6 w-16 overflow-hidden rounded-full bg-neutral-800">
+          <ShimmerOverlay />
+        </div>
+        <div className="relative h-6 w-24 overflow-hidden rounded-full bg-neutral-800">
+          <ShimmerOverlay />
+        </div>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="h-28 animate-pulse rounded-xl bg-neutral-800/50" />
-        <div className="h-28 animate-pulse rounded-xl bg-neutral-800/50" />
+        <div className="relative h-28 overflow-hidden rounded-xl bg-neutral-800/50">
+          <ShimmerOverlay />
+        </div>
+        <div className="relative h-28 overflow-hidden rounded-xl bg-neutral-800/50">
+          <ShimmerOverlay />
+        </div>
       </div>
-      <div className="h-24 animate-pulse rounded-xl bg-neutral-800/50" />
+      <div className="relative h-24 overflow-hidden rounded-xl bg-neutral-800/50">
+        <ShimmerOverlay />
+      </div>
     </div>
   );
 }

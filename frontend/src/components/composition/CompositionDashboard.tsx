@@ -1,12 +1,15 @@
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Section } from "@/components/Section";
-import type { CompositionInfo } from "@/types/analysis";
+import { fadeUpIn } from "@/lib/motionVariants";
+import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 import { CompositionMetrics } from "./CompositionMetrics";
 import { CompositionOverlay, type OverlayToggles } from "./CompositionOverlay";
 import { CompositionVisuals } from "./CompositionVisuals";
 
 interface CompositionDashboardProps {
   composition: CompositionInfo | null;
+  semantic?: SemanticComposition | null;
   imageUrl: string | null;
   loading?: boolean;
   error?: string | null;
@@ -24,34 +27,43 @@ const SECTION_DESCRIPTION =
 
 export function CompositionDashboard({
   composition,
+  semantic = null,
   imageUrl,
   loading = false,
   error = null,
 }: CompositionDashboardProps) {
   return (
-    <Section title="Composition analysis" description={SECTION_DESCRIPTION}>
-      {loading ? (
-        <p className="text-sm text-neutral-500">Analyzing composition…</p>
-      ) : error ? (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
-      ) : !composition || !imageUrl ? (
-        <p className="text-sm text-neutral-500">
-          Run the analysis to see the composition overlays and metrics.
-        </p>
-      ) : (
-        <DashboardContent composition={composition} imageUrl={imageUrl} />
-      )}
-    </Section>
+    <motion.div {...fadeUpIn(0.15)}>
+      <Section title="Composition analysis" description={SECTION_DESCRIPTION}>
+        {loading ? (
+          <p className="text-sm text-neutral-500">Analyzing composition…</p>
+        ) : error ? (
+          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {error}
+          </div>
+        ) : !composition || !imageUrl ? (
+          <p className="text-sm text-neutral-500">
+            Run the analysis to see the composition overlays and metrics.
+          </p>
+        ) : (
+          <DashboardContent
+            composition={composition}
+            semantic={semantic}
+            imageUrl={imageUrl}
+          />
+        )}
+      </Section>
+    </motion.div>
   );
 }
 
 function DashboardContent({
   composition,
+  semantic,
   imageUrl,
 }: {
   composition: CompositionInfo;
+  semantic: SemanticComposition | null;
   imageUrl: string;
 }) {
   const linesAvailable = composition.leading_lines.lines.length > 0;
@@ -120,7 +132,7 @@ function DashboardContent({
         })}
       </div>
 
-      <CompositionVisuals composition={composition} />
+      <CompositionVisuals composition={composition} semantic={semantic} />
 
       <CompositionOverlay
         imageUrl={imageUrl}
@@ -128,7 +140,7 @@ function DashboardContent({
         toggles={toggles}
       />
 
-      <CompositionMetrics composition={composition} />
+      <CompositionMetrics composition={composition} semantic={semantic} />
     </div>
   );
 }

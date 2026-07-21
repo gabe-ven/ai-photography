@@ -4,7 +4,7 @@ import {
   RadialBarChart,
   ResponsiveContainer,
 } from "recharts";
-import type { CompositionInfo } from "@/types/analysis";
+import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 
 /**
  * Three circular indicators (Recharts RadialBarChart) for Rule of Thirds,
@@ -13,13 +13,18 @@ import type { CompositionInfo } from "@/types/analysis";
  */
 export function CompositionScores({
   composition,
+  semantic,
 }: {
   composition: CompositionInfo;
+  semantic?: SemanticComposition | null;
 }) {
   const scores: ScoreDef[] = [
     {
       label: "Rule of Thirds",
-      value: Math.round(composition.rule_of_thirds.score * 100),
+      value:
+        semantic?.rule_of_thirds?.score != null
+          ? Math.round(semantic.rule_of_thirds.score)
+          : Math.round(composition.rule_of_thirds.score * 100),
       color: "#38bdf8",
     },
     {
@@ -34,7 +39,10 @@ export function CompositionScores({
       label: "Negative Space",
       // Subject-excluded ratio: empty space around the subject, matching
       // CompositionMetrics and the radar profile.
-      value: Math.round(composition.negative_space.subject_excluded_ratio * 100),
+      value:
+        semantic?.negative_space?.score != null
+          ? Math.round(semantic.negative_space.score)
+          : Math.round(composition.negative_space.subject_excluded_ratio * 100),
       color: "#34d399",
     },
   ];

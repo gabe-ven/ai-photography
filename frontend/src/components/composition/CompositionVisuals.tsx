@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
-import type { CompositionInfo } from "@/types/analysis";
+import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 import { CompositionRadar } from "./CompositionRadar";
 import { CompositionScores } from "./CompositionScores";
 import { CompositionSummary } from "./CompositionSummary";
@@ -14,23 +14,25 @@ import { LeadingLinesScatter } from "./LeadingLinesScatter";
  */
 export function CompositionVisuals({
   composition,
+  semantic,
 }: {
   composition: CompositionInfo;
+  semantic?: SemanticComposition | null;
 }) {
   const hasLines = composition.leading_lines.lines.length > 0;
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <ChartCard title="Composition profile" delay={0} className="lg:col-span-2 lg:row-span-2">
-        <CompositionRadar composition={composition} />
+        <CompositionRadar composition={composition} semantic={semantic} />
       </ChartCard>
 
       <ChartCard title="Summary" delay={0.05}>
-        <CompositionSummary composition={composition} />
+        <CompositionSummary composition={composition} semantic={semantic} />
       </ChartCard>
 
       <ChartCard title="Key scores" delay={0.1}>
-        <CompositionScores composition={composition} />
+        <CompositionScores composition={composition} semantic={semantic} />
       </ChartCard>
 
       <ChartCard title="Edge density by region" delay={0.15} className="lg:col-span-2">
