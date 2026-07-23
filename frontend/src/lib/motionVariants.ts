@@ -2,7 +2,6 @@ import type { Transition, Variants } from "framer-motion";
 
 export const CARD_SPRING: Transition = { type: "spring", stiffness: 200, damping: 26 };
 export const HERO_SPRING: Transition = { type: "spring", stiffness: 60, damping: 20 };
-export const SUBTITLE_SPRING: Transition = { type: "spring", stiffness: 80, damping: 22 };
 export const HR_SPRING: Transition = { type: "spring", stiffness: 80, damping: 22 };
 export const SECTION_LINE_SPRING: Transition = { type: "spring", stiffness: 60, damping: 20 };
 export const SECTION_LABEL_SPRING: Transition = { type: "spring", stiffness: 100, damping: 22 };

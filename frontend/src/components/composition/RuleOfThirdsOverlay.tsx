@@ -28,10 +28,10 @@ export function RuleOfThirdsOverlay({
       transition={{ duration: 0.4 }}
     >
       {xs.map((x) => (
-        <line key={`vx-${x}`} x1={x} y1={0} x2={x} y2={height} stroke="white" strokeOpacity={0.55} strokeWidth={stroke} />
+        <line key={`vx-${x}`} x1={x} y1={0} x2={x} y2={height} stroke="white" strokeOpacity={0.15} strokeWidth={stroke} />
       ))}
       {ys.map((y) => (
-        <line key={`hy-${y}`} x1={0} y1={y} x2={width} y2={y} stroke="white" strokeOpacity={0.55} strokeWidth={stroke} />
+        <line key={`hy-${y}`} x1={0} y1={y} x2={width} y2={y} stroke="white" strokeOpacity={0.15} strokeWidth={stroke} />
       ))}
       {powerPoints.map((p, i) => {
         const isNearest =

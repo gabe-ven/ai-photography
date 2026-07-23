@@ -37,7 +37,7 @@ export function CameraInfoCard({ exif }: { exif: ExifInfo }) {
       >
         {stats.map((stat) => (
           <motion.div key={stat.label} variants={staggerItem}>
-            <span className="block font-mono text-[10px] uppercase tracking-widest text-muted">
+            <span className="block font-mono text-[10px] uppercase tracking-widest text-dim">
               {stat.label}
             </span>
             <span className="mt-1 block font-mono text-2xl font-medium tabular-nums text-heading">

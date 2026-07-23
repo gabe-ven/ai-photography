@@ -33,24 +33,24 @@ export function EdgeDensityChart({
     <div className="h-full w-full">
       <ResponsiveContainer width="100%" height="100%" minHeight={200}>
         <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="#e8e8e4" vertical={false} />
+          <CartesianGrid stroke="#222222" vertical={false} />
           <XAxis
             dataKey="region"
-            tick={{ fill: "#1c1c1a", fontSize: 11 }}
-            axisLine={{ stroke: "#e8e8e4" }}
+            tick={{ fill: "#444444", fontSize: 11 }}
+            axisLine={{ stroke: "#222222" }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: "#999994", fontSize: 10 }}
+            tick={{ fill: "#444444", fontSize: 10 }}
             axisLine={false}
             tickLine={false}
             unit="%"
           />
           <Tooltip
-            cursor={{ fill: "rgba(10,10,8,0.04)" }}
-            contentStyle={LIGHT_TOOLTIP}
-            labelStyle={{ color: "#1c1c1a" }}
-            itemStyle={{ color: "#34d399" }}
+            cursor={{ fill: "rgba(255,255,255,0.04)" }}
+            contentStyle={DARK_TOOLTIP}
+            labelStyle={{ color: "#ffffff" }}
+            itemStyle={{ color: "#ffe234" }}
             formatter={(value) => [`${Number(value)}%`, "Edge density"]}
           />
           <Bar
@@ -60,7 +60,7 @@ export function EdgeDensityChart({
             animationDuration={800}
           >
             {data.map((entry) => (
-              <Cell key={entry.region} fill="#34d399" />
+              <Cell key={entry.region} fill="#ffe234" fillOpacity={0.6} />
             ))}
           </Bar>
         </BarChart>
@@ -73,10 +73,10 @@ function round1(v: number): number {
   return Math.round(v * 10) / 10;
 }
 
-const LIGHT_TOOLTIP = {
-  background: "#ffffff",
-  border: "1px solid #e8e8e4",
+const DARK_TOOLTIP = {
+  background: "#111111",
+  border: "1px solid #222222",
   borderRadius: 2,
-  color: "#1c1c1a",
+  color: "#ffffff",
   fontSize: 12,
 } as const;

@@ -6,10 +6,10 @@ import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 type Status = "good" | "warn" | "info" | "neutral";
 
 const STATUS_STYLES: Record<Status, string> = {
-  good: "bg-heading text-white",
-  warn: "border border-border text-muted",
-  info: "text-muted",
-  neutral: "text-muted",
+  good: "rounded-none px-2 py-0.5 border border-accent/25 bg-accent/[0.12] text-accent",
+  warn: "rounded-none px-2 py-0.5 border border-border-strong bg-[#1a1a1a] text-muted",
+  info: "text-dim",
+  neutral: "text-dim",
 };
 
 interface MetricDef {
@@ -186,10 +186,10 @@ export function CompositionMetrics({
         <motion.div
           key={m.key}
           variants={staggerItem}
-          whileHover={{ y: -3, borderColor: "#999994" }}
+          whileHover={{ y: -3, borderColor: "#2e2e2e", backgroundColor: "#161616" }}
           whileTap={{ y: 0, scale: 0.99 }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="rounded-[2px] border border-border bg-surface p-4"
+          className="rounded border border-border bg-surface p-5"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-muted">
@@ -198,11 +198,11 @@ export function CompositionMetrics({
                 {m.label}
               </span>
               {m.aiSourced && (
-                <span className="font-mono text-[9px] text-blue-600">· AI</span>
+                <span className="font-mono text-[9px] text-blue-400">· AI</span>
               )}
             </div>
             <span
-              className={`rounded-none px-2 py-0.5 font-mono text-[10px] uppercase ${STATUS_STYLES[m.status]}`}
+              className={`font-mono text-[10px] uppercase ${STATUS_STYLES[m.status]}`}
             >
               {m.status === "good"
                 ? "Strong"

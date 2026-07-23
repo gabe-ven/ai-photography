@@ -93,9 +93,9 @@ function DashboardContent({
 
   const toggleDefs: ToggleDef[] = [
     { key: "thirds", label: "Rule of thirds", dot: "bg-white", available: true },
-    { key: "subject", label: "Subject", dot: "bg-amber-400", available: true },
-    { key: "lines", label: "Leading lines", dot: "bg-cyan-400", available: linesAvailable },
-    { key: "horizon", label: "Horizon", dot: "bg-emerald-400", available: horizonAvailable },
+    { key: "subject", label: "Subject", dot: "bg-accent", available: true },
+    { key: "lines", label: "Leading lines", dot: "bg-accent", available: linesAvailable },
+    { key: "horizon", label: "Horizon", dot: "bg-accent", available: horizonAvailable },
     { key: "edges", label: "Edges", dot: "bg-emerald-300", available: true },
   ];
 
@@ -117,8 +117,8 @@ function DashboardContent({
                 !def.available
                   ? "cursor-not-allowed border-border text-muted/50"
                   : active
-                    ? "border-heading bg-heading text-white"
-                    : "border-border text-muted hover:border-heading/40"
+                    ? "border-accent bg-accent text-bg"
+                    : "border-border text-muted hover:border-border-strong"
               }`}
             >
               <span

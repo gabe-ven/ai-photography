@@ -115,7 +115,7 @@ function CubeFrame() {
   );
   return (
     <lineSegments geometry={geometry}>
-      <lineBasicMaterial color="#d8d8d2" />
+      <lineBasicMaterial color="#222222" />
     </lineSegments>
   );
 }
@@ -135,7 +135,7 @@ function GridFloor() {
   return (
     <>
       {segments.map((points, i) => (
-        <Line key={i} points={points} color="#e8e8e4" lineWidth={0.5} />
+        <Line key={i} points={points} color="#1a1a1a" lineWidth={0.5} />
       ))}
     </>
   );

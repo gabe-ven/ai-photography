@@ -30,7 +30,7 @@ export function ControlSlider({ label, value, aiValue, min, max, step, onChange 
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-1 w-full cursor-pointer appearance-none rounded-full bg-border accent-heading"
+        className="h-1 w-full cursor-pointer appearance-none rounded-full bg-border accent-accent"
       />
     </div>
   );

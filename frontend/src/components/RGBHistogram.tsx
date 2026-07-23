@@ -63,7 +63,7 @@ export function RGBHistogram({ histogram }: { histogram: Histogram }) {
           x2={paths.midX}
           y1={0}
           y2={VIEW_H}
-          stroke="#e8e8e4"
+          stroke="#222222"
           strokeWidth={0.5}
           strokeDasharray="2 2"
         />
@@ -94,7 +94,7 @@ export function RGBHistogram({ histogram }: { histogram: Histogram }) {
             style={{
               borderColor: CHANNEL_STYLES[c].stroke,
               backgroundColor: visible[c] ? CHANNEL_STYLES[c].fill : "transparent",
-              color: visible[c] ? CHANNEL_STYLES[c].stroke : "#999994",
+              color: visible[c] ? CHANNEL_STYLES[c].stroke : "#666666",
             }}
           >
             <span

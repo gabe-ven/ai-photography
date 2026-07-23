@@ -29,7 +29,7 @@ export function AICritiqueDashboard({
         description={SECTION_DESCRIPTION}
         action={
           loading ? (
-            <span className="animate-pulse rounded-sm bg-blue-600/10 px-3 py-1 font-mono text-xs uppercase tracking-widest text-blue-600">
+            <span className="animate-pulse rounded-sm bg-blue-400/10 px-3 py-1 font-mono text-xs uppercase tracking-widest text-blue-400">
               Thinking…
             </span>
           ) : undefined
@@ -60,17 +60,17 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
     <div className="space-y-6">
       {ai.scene && (ai.scene.summary || ai.scene.tags.length > 0) && (
         <div>
-          <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted">
+          <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-dim">
             Scene
           </h3>
           {ai.scene.summary && (
-            <p className="text-base leading-relaxed text-ink/80">
+            <p className="text-base leading-relaxed text-[#999999]">
               {ai.scene.summary}
             </p>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {ai.scene.setting && (
-              <span className="rounded-sm bg-heading px-2.5 py-1 font-mono text-xs text-white">
+              <span className="rounded-sm bg-accent px-2.5 py-1 font-mono text-xs text-bg">
                 {ai.scene.setting}
               </span>
             )}
@@ -111,7 +111,7 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
           <motion.div variants={staggerItem}>
             <InfoCard title="Lighting">
               {ai.lighting.summary && (
-                <p className="text-sm text-ink/80">{ai.lighting.summary}</p>
+                <p className="text-sm text-[#999999]">{ai.lighting.summary}</p>
               )}
               <div className="mt-2 flex flex-wrap gap-2">
                 <Chip label="Direction" value={ai.lighting.direction} />
@@ -151,7 +151,7 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
           )}
           {ai.composition_critique.overall && (
             <div className="lg:col-span-2">
-              <p className="text-sm leading-relaxed text-ink/80">
+              <p className="text-sm leading-relaxed text-muted">
                 {ai.composition_critique.overall}
               </p>
             </div>
@@ -161,13 +161,13 @@ function CritiqueContent({ ai }: { ai: AIAnalysis }) {
 
       {ai.recreation_guide.length > 0 && (
         <div>
-          <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted">
+          <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-dim">
             Recreation guide
           </h3>
           <ol className="space-y-2">
             {ai.recreation_guide.map((step, i) => (
-              <li key={i} className="flex gap-3 text-sm text-ink/80">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-heading font-mono text-xs font-semibold text-white">
+              <li key={i} className="flex gap-3 text-sm text-[#999999]">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-accent font-mono text-xs font-semibold text-bg">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="leading-relaxed">{step}</span>
@@ -229,8 +229,8 @@ function InfoCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[2px] border border-border bg-surface p-4">
-      <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted">
+    <div className="rounded border border-border bg-surface p-5">
+      <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-dim">
         {title}
       </h3>
       {children}
@@ -254,11 +254,11 @@ function BulletList({
   items: string[];
   tone: "good" | "suggest";
 }) {
-  void tone; // no more color-coded good/bad — both render the same in this palette
+  const textColor = tone === "good" ? "text-[#cccccc]" : "text-[#999999]";
   return (
     <ul className="space-y-2">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-2.5 text-sm text-ink/80">
+        <li key={i} className={`flex gap-2.5 text-sm ${textColor}`}>
           <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-heading" />
           <span className="leading-relaxed">{item}</span>
         </li>
@@ -276,7 +276,7 @@ function Banner({
 }) {
   const styles =
     tone === "error"
-      ? "border-red-200 bg-red-50 text-red-700"
+      ? "border-red-500/40 bg-red-500/10 text-red-300"
       : "border-border bg-surface text-muted";
   return (
     <div className={`border px-4 py-3 font-mono text-sm ${styles}`}>

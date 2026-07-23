@@ -31,13 +31,14 @@ export function Dropzone({ onFile }: DropzoneProps) {
       onDrop={handleDrop}
       animate={{
         scale: dragging ? 1.015 : 1,
-        borderColor: dragging ? "#0a0a08" : "#e8e8e4",
+        borderColor: dragging ? "#ffe234" : "#222222",
+        backgroundColor: dragging ? "rgba(255,226,52,0.03)" : "#0f0f0f",
       }}
       exit={{ opacity: 0, scale: 0.96, y: -8 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className="flex cursor-pointer flex-col items-center justify-center gap-3 border border-dashed p-16 text-center hover:border-heading/40"
+      className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded border-[1.5px] border-dashed p-16 text-center"
     >
-      <p className="font-mono text-sm text-muted">
+      <p className="font-mono text-sm text-subtle">
         Drop a photograph here — or click to browse
       </p>
       <p className="font-mono text-xs text-muted">

@@ -75,15 +75,15 @@ function scoreBand(score: number): { label: string; className: string } {
   if (score >= 70)
     return {
       label: "Strong",
-      className: "bg-heading text-white",
+      className: "border border-accent/25 bg-accent/[0.12] text-accent",
     };
   if (score >= 45)
     return {
       label: "Balanced",
-      className: "text-muted",
+      className: "text-dim",
     };
   return {
     label: "Review",
-    className: "border border-border text-muted",
+    className: "border border-border-strong bg-[#1a1a1a] text-muted",
   };
 }

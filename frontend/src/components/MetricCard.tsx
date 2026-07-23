@@ -22,10 +22,10 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <motion.div
-      whileHover={{ y: -3, borderColor: "#999994" }}
+      whileHover={{ y: -3, borderColor: "#2e2e2e", backgroundColor: "#161616" }}
       whileTap={{ y: 0, scale: 0.99 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className="rounded-[2px] border border-border bg-surface p-4"
+      className="rounded border border-border bg-surface p-5"
     >
       <div className="flex items-center gap-1.5">
         <span className="font-mono text-xs uppercase tracking-widest text-muted">
@@ -56,7 +56,7 @@ export function MetricCard({
 
 export function MetricCardSkeleton() {
   return (
-    <div className="relative overflow-hidden rounded-[2px] border border-border bg-surface p-4">
+    <div className="relative overflow-hidden rounded border border-border bg-surface p-5">
       <ShimmerOverlay />
       <div className="h-3 w-16 bg-border" />
       <div className="mt-3 h-7 w-20 bg-border" />

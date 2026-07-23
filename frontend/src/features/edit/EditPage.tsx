@@ -123,26 +123,26 @@ export function EditPage({
     >
       <button
         onClick={onBack}
-        className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+        className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-border-strong hover:text-[#999999]"
       >
         ← Back
       </button>
 
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="flex flex-col items-start gap-4">
-          <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
+          <div className="inline-block max-w-full overflow-hidden">
             <EditCanvas ref={canvasRef} file={file} adjustments={adjustments} />
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleDownload}
               disabled={exporting}
-              className="bg-heading px-10 py-4 font-mono text-xs uppercase tracking-widest text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
+              className="bg-accent px-10 py-4 font-mono text-xs uppercase tracking-widest text-bg transition-colors hover:bg-[#fff7a0] disabled:opacity-50"
             >
               {exporting ? "Exporting…" : "Download"}
             </button>
             {colorGrade?.available && colorGrade.style && (
-              <span className="rounded-sm bg-heading px-2.5 py-1 font-mono text-xs text-white">
+              <span className="rounded-sm bg-accent px-2.5 py-1 font-mono text-xs text-bg">
                 {colorGrade.style}
               </span>
             )}
@@ -166,7 +166,7 @@ export function EditPage({
                 Generating suggestions…
               </p>
             ) : colorGradeStatus === "error" ? (
-              <p className="font-mono text-sm text-red-700">
+              <p className="font-mono text-sm text-red-400">
                 {colorGradeError ?? "Color grading failed."}
               </p>
             ) : colorGrade && !colorGrade.available ? (
@@ -188,7 +188,7 @@ export function EditPage({
                   setAdjustments(aiAdjustments);
                   confirmReset();
                 }}
-                className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+                className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-border-strong hover:text-[#999999]"
               >
                 Reset to AI values
               </button>
@@ -197,7 +197,7 @@ export function EditPage({
                   setAdjustments(ZERO_ADJUSTMENTS);
                   confirmReset();
                 }}
-                className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+                className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-border-strong hover:text-[#999999]"
               >
                 Reset to original
               </button>

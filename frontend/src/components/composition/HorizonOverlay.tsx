@@ -15,7 +15,7 @@ export function HorizonOverlay({ width, height, horizon }: HorizonOverlayProps) 
   const tilt = horizon.tilt_angle ?? 0;
   const dy = Math.tan((tilt * Math.PI) / 180) * (width / 2);
   const stroke = Math.max(width, height) / 260;
-  const color = horizon.is_level ? "#34d399" : "#fbbf24";
+  const color = "#ffe234";
 
   return (
     <motion.g

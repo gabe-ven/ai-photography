@@ -84,7 +84,7 @@ function RadialScore({ label, value, color }: ScoreDef) {
             />
             <RadialBar
               dataKey="value"
-              background={{ fill: "rgba(10,10,8,0.06)" }}
+              background={{ fill: "rgba(255,255,255,0.06)" }}
               cornerRadius={10}
               isAnimationActive
               animationDuration={900}

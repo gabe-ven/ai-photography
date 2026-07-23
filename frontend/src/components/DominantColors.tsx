@@ -38,7 +38,7 @@ export function DominantColors({ colors }: { colors: ColorSwatch[] }) {
               className="h-3 w-3 shrink-0 rounded-[2px]"
               style={{ backgroundColor: color.hex }}
             />
-            <span className="uppercase text-ink">{color.hex}</span>
+            <span className="uppercase text-dim">{color.hex}</span>
             <span>{Math.round(color.proportion * 100)}%</span>
           </div>
         ))}

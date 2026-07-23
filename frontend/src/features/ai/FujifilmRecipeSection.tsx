@@ -18,13 +18,13 @@ export function FujifilmRecipeSection({ recipe }: { recipe: FujifilmRecipe }) {
     <Section number="04" title="FUJIFILM RECIPE">
       <div className="space-y-6">
         {recipe.film_simulation && (
-          <p className="font-serif text-3xl italic text-heading">{recipe.film_simulation}</p>
+          <p className="font-mono text-2xl text-accent">{recipe.film_simulation}</p>
         )}
-        <div className="max-w-md divide-y divide-border">
+        <div className="max-w-md divide-y divide-[#1a1a1a]">
           {rows.map(([label, value]) =>
             value != null ? (
               <div key={label} className="flex items-center justify-between py-3">
-                <span className="font-mono text-xs uppercase tracking-wide text-muted">
+                <span className="font-mono text-xs uppercase tracking-wide text-dim">
                   {label}
                 </span>
                 <span className="font-mono text-sm font-medium text-heading">{value}</span>

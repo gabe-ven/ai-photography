@@ -36,12 +36,13 @@ export function Section({ number, title, description, action, children }: Sectio
       />
       <div className="mb-8 mt-6 flex items-center justify-between gap-4">
         <motion.div
-          className="flex items-center gap-4"
+          className="flex items-center gap-3"
           initial={{ opacity: 0, x: -8 }}
           animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
           transition={{ ...SECTION_LABEL_SPRING, delay: 0.15 }}
         >
-          <span className="font-mono text-xs text-muted">{number}</span>
+          <span className="font-mono text-xs text-accent">{number}</span>
+          <span className="font-mono text-xs text-subtle">/</span>
           <span className="font-mono text-xs uppercase tracking-widest text-muted">
             {title}
           </span>

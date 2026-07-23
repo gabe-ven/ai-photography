@@ -29,12 +29,12 @@ export function LeadingLinesOverlay({
           y1={line.y1}
           x2={line.x2}
           y2={line.y2}
-          stroke="#22d3ee"
+          stroke="#ffe234"
           strokeWidth={stroke}
           strokeLinecap="round"
-          strokeOpacity={0.9}
+          strokeOpacity={0.6}
           initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 0.9 }}
+          animate={{ pathLength: 1, opacity: 0.6 }}
           transition={{ duration: 0.6, delay: i * 0.05, ease: "easeOut" }}
         />
       ))}

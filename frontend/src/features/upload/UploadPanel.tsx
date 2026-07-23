@@ -6,7 +6,7 @@ import { AICritiqueDashboard } from "@/features/ai/AICritiqueDashboard";
 import { FujifilmRecipeSection } from "@/features/ai/FujifilmRecipeSection";
 import { EditPage } from "@/features/edit/EditPage";
 import { VisionDashboard } from "@/features/vision/VisionDashboard";
-import { CARD_SPRING, HERO_SPRING, SUBTITLE_SPRING } from "@/lib/motionVariants";
+import { CARD_SPRING, HERO_SPRING } from "@/lib/motionVariants";
 import { CameraInfoCard } from "./CameraInfoCard";
 import { Dropzone } from "./Dropzone";
 import { useImageAnalysis } from "./useImageAnalysis";
@@ -50,9 +50,13 @@ export function UploadPanel() {
   return (
     <AnimatePresence mode="popLayout">
       {stage === "hero" && (
-        <motion.div key="hero" exit={{ opacity: 0 }} className="pb-24 pt-20 md:pt-32">
+        <motion.div
+          key="hero"
+          exit={{ opacity: 0 }}
+          className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center py-16"
+        >
           <p className="font-mono text-xs uppercase tracking-widest text-muted">
-            AI Photography Critique / V2.0
+            Photographer Brain
           </p>
           <h1 className="mt-6 leading-[0.95]">
             <motion.span
@@ -61,26 +65,17 @@ export function UploadPanel() {
               transition={HERO_SPRING}
               className="block font-serif text-7xl italic tracking-tight text-heading md:text-9xl"
             >
-              Frame
+              Photographer
             </motion.span>
             <motion.span
               initial={{ y: 80, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ ...HERO_SPRING, delay: 0.1 }}
-              className="block font-sans text-7xl font-black tracking-tighter text-heading md:text-9xl"
+              className="block font-sans text-7xl font-black tracking-tighter text-accent md:text-9xl"
             >
-              Grader.
+              Brain.
             </motion.span>
           </h1>
-          <motion.p
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ ...SUBTITLE_SPRING, delay: 0.25 }}
-            className="mt-6 max-w-md text-lg font-light text-muted"
-          >
-            Upload a photograph. Get an AI-powered critique grounded in real
-            measurements.
-          </motion.p>
           <div className="mt-12">
             <Dropzone onFile={selectFile} />
           </div>
@@ -109,7 +104,7 @@ export function UploadPanel() {
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="mx-auto flex max-w-2xl flex-col items-center gap-6 py-16"
         >
-          <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
+          <div className="inline-block max-w-full overflow-hidden">
             {previewUrl ? (
               <motion.img
                 layoutId="photo-preview"
@@ -127,7 +122,7 @@ export function UploadPanel() {
             <AnalyzeButton onClick={analyze} />
             <button
               onClick={reset}
-              className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+              className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-border-strong hover:text-[#999999]"
             >
               Choose another
             </button>
@@ -159,7 +154,7 @@ export function UploadPanel() {
         >
           <div className="grid gap-6 md:grid-cols-2">
             <div className="flex flex-col items-start gap-3">
-              <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
+              <div className="inline-block max-w-full overflow-hidden">
                 {previewUrl ? (
                   <motion.img
                     layoutId="photo-preview"
@@ -175,7 +170,7 @@ export function UploadPanel() {
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={reset}
-                  className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+                  className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-border-strong hover:text-[#999999]"
                 >
                   Choose another →
                 </button>
@@ -185,7 +180,7 @@ export function UploadPanel() {
                       setView("editing");
                       fetchColorGrade();
                     }}
-                    className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+                    className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-border-strong hover:text-[#999999]"
                   >
                     Edit photo →
                   </button>
@@ -267,7 +262,7 @@ function AnalyzingView({
       transition={{ duration: 0.3 }}
       className="mx-auto flex max-w-2xl flex-col items-center gap-8 py-16"
     >
-      <div className="relative inline-block max-w-full overflow-hidden border border-border bg-surface">
+      <div className="relative inline-block max-w-full overflow-hidden">
         {previewUrl ? (
           <img
             src={previewUrl}
@@ -280,13 +275,13 @@ function AnalyzingView({
 
         {/* Sweeping glow band + bright scan edge. */}
         <motion.div
-          className="pointer-events-none absolute inset-x-0 h-28 bg-gradient-to-b from-transparent via-black/10 to-transparent"
+          className="pointer-events-none absolute inset-x-0 h-28 bg-gradient-to-b from-transparent via-white/10 to-transparent"
           initial={{ top: "-25%" }}
           animate={{ top: ["-25%", "105%"] }}
           transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="pointer-events-none absolute inset-x-0 h-0.5 bg-heading shadow-[0_0_14px_2px_rgba(10,10,8,0.35)]"
+          className="pointer-events-none absolute inset-x-0 h-0.5 bg-accent shadow-[0_0_14px_2px_rgba(255,226,52,0.35)]"
           initial={{ top: "-25%" }}
           animate={{ top: ["-25%", "105%"] }}
           transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
@@ -326,7 +321,7 @@ function AnalyzeButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       onHoverStart={() => animate(arrowX, 6, ARROW_SPRING)}
       onHoverEnd={() => animate(arrowX, 0, ARROW_SPRING)}
-      className="bg-heading px-10 py-4 font-mono text-xs uppercase tracking-widest text-white transition-colors hover:bg-zinc-800"
+      className="bg-accent px-10 py-4 font-mono text-xs uppercase tracking-widest text-bg transition-colors hover:bg-[#fff7a0]"
     >
       Analyze{" "}
       <motion.span className="inline-block" style={{ x: arrowX }}>
@@ -373,7 +368,7 @@ function PhotoSkeleton({ className = "h-[360px] w-[300px]" }: { className?: stri
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="mt-4 border border-red-200 bg-red-50 px-4 py-3 font-mono text-sm text-red-700">
+    <div className="mt-4 border border-red-500/40 bg-red-500/10 px-4 py-3 font-mono text-sm text-red-300">
       {message}
     </div>
   );

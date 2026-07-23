@@ -65,9 +65,9 @@ function ChartCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay, ease: "easeOut" }}
-      className={`flex flex-col rounded-[2px] border border-border bg-surface p-5 ${className}`}
+      className={`flex flex-col rounded border border-border bg-surface p-5 ${className}`}
     >
-      <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-muted">
+      <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-dim">
         {title}
       </h3>
       <div className="min-h-0 flex-1">{children}</div>

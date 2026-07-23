@@ -26,18 +26,19 @@ export function CompositionRadar({
         margin={{ top: 30, right: 60, bottom: 30, left: 60 }}
         gridLabelOffset={20}
         dotSize={5}
-        dotColor="#0a0a08"
+        dotColor="#ffe234"
         dotBorderWidth={0}
-        colors={["#0a0a08"]}
+        colors={["#ffe234"]}
         fillOpacity={0.06}
-        blendMode="multiply"
+        borderWidth={1.5}
+        blendMode="normal"
         animate
         motionConfig="gentle"
         isInteractive
         theme={{
           background: "transparent",
-          text: { fontFamily: "DM Mono, monospace", fontSize: 10 },
-          grid: { line: { stroke: "#e8e8e4", strokeWidth: 0.5 } },
+          text: { fontFamily: "DM Mono, monospace", fontSize: 10, fill: "#444444" },
+          grid: { line: { stroke: "#222222", strokeWidth: 0.5 } },
         }}
       />
     </div>

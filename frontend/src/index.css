@@ -5,12 +5,18 @@
   --font-serif: "Instrument Serif", Georgia, serif;
   --font-mono: "DM Mono", monospace;
 
-  --color-bg: #f9f9f7;
-  --color-surface: #ffffff;
-  --color-border: #e8e8e4;
-  --color-muted: #999994;
-  --color-ink: #1c1c1a;
-  --color-heading: #0a0a08;
+  /* motion.dev-style dark palette */
+  --color-bg: #0a0a0a;
+  --color-surface: #111111;
+  --color-surface-hover: #161616;
+  --color-border: #222222;
+  --color-border-strong: #2e2e2e;
+  --color-muted: #666666;
+  --color-dim: #444444;
+  --color-subtle: #333333;
+  --color-ink: #ffffff;
+  --color-heading: #ffffff;
+  --color-accent: #ffe234;
 }
 
 body {

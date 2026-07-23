@@ -53,7 +53,7 @@ export function SubjectMarker({
             width={box.w}
             height={box.h}
             fill="none"
-            stroke="#f59e0b"
+            stroke="#ffe234"
             strokeWidth={stroke}
             strokeDasharray={`${tick} ${tick * 0.6}`}
             rx={r * 0.4}
@@ -62,7 +62,7 @@ export function SubjectMarker({
             <text
               x={box.x + stroke * 2}
               y={Math.max(box.y - stroke * 2, r)}
-              fill="#f59e0b"
+              fill="#ffe234"
               fontSize={r * 1.1}
               fontWeight={600}
             >
@@ -71,12 +71,12 @@ export function SubjectMarker({
           )}
         </>
       )}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f59e0b" strokeWidth={stroke} />
-      <circle cx={cx} cy={cy} r={stroke * 1.5} fill="#f59e0b" />
-      <line x1={cx - tick} y1={cy} x2={cx - r} y2={cy} stroke="#f59e0b" strokeWidth={stroke} />
-      <line x1={cx + r} y1={cy} x2={cx + tick} y2={cy} stroke="#f59e0b" strokeWidth={stroke} />
-      <line x1={cx} y1={cy - tick} x2={cx} y2={cy - r} stroke="#f59e0b" strokeWidth={stroke} />
-      <line x1={cx} y1={cy + r} x2={cx} y2={cy + tick} stroke="#f59e0b" strokeWidth={stroke} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#ffe234" strokeWidth={stroke} />
+      <circle cx={cx} cy={cy} r={stroke * 1.5} fill="#ffe234" />
+      <line x1={cx - tick} y1={cy} x2={cx - r} y2={cy} stroke="#ffe234" strokeWidth={stroke} />
+      <line x1={cx + r} y1={cy} x2={cx + tick} y2={cy} stroke="#ffe234" strokeWidth={stroke} />
+      <line x1={cx} y1={cy - tick} x2={cx} y2={cy - r} stroke="#ffe234" strokeWidth={stroke} />
+      <line x1={cx} y1={cy + r} x2={cx} y2={cy + tick} stroke="#ffe234" strokeWidth={stroke} />
     </motion.g>
   );
 }
