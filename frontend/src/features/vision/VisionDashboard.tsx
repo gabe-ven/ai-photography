@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { ColorSpaceCloud } from "@/components/ColorSpaceCloud";
 import { DominantColors } from "@/components/DominantColors";
 import { LuminanceChart } from "@/components/LuminanceChart";
 import { MetricCard, MetricCardSkeleton } from "@/components/MetricCard";
@@ -50,7 +51,7 @@ export function VisionDashboard({
 
 function VisionContent({ vision }: { vision: VisionInfo }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <motion.div
         variants={staggerContainer}
         initial="hidden"
@@ -110,14 +111,15 @@ function VisionContent({ vision }: { vision: VisionInfo }) {
         </motion.div>
       </motion.div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div>
-          <DominantColors colors={vision.dominant_colors} />
-        </div>
-        <div>
+      <div className="space-y-10">
+        <DominantColors colors={vision.dominant_colors} />
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <RGBHistogram histogram={vision.histogram} />
           <LuminanceChart histogram={vision.histogram} />
         </div>
+
+        <ColorSpaceCloud samples={vision.color_samples} />
       </div>
     </div>
   );

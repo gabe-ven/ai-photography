@@ -1,9 +1,10 @@
 import { useCallback, useState } from "react";
-import { analyzeImage, generateAIAnalysis, validateFile } from "@/lib/api";
-import type { AIAnalysis, AnalysisResponse } from "@/types/analysis";
+import { analyzeImage, generateAIAnalysis, requestColorGrade, validateFile } from "@/lib/api";
+import type { AIAnalysis, AnalysisResponse, ColorGradeResponse } from "@/types/analysis";
 
 type Status = "idle" | "loading" | "success" | "error";
 type AiStatus = "idle" | "loading" | "success" | "error";
+type ColorGradeStatus = "idle" | "loading" | "success" | "error";
 
 export interface ImageAnalysisState {
   file: File | null;
@@ -14,8 +15,12 @@ export interface ImageAnalysisState {
   aiStatus: AiStatus;
   aiError: string | null;
   ai: AIAnalysis | null;
+  colorGradeStatus: ColorGradeStatus;
+  colorGradeError: string | null;
+  colorGrade: ColorGradeResponse | null;
   selectFile: (file: File) => void;
   analyze: () => Promise<void>;
+  fetchColorGrade: () => Promise<void>;
   reset: () => void;
 }
 
@@ -28,6 +33,9 @@ export function useImageAnalysis(): ImageAnalysisState {
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
   const [aiError, setAiError] = useState<string | null>(null);
   const [ai, setAi] = useState<AIAnalysis | null>(null);
+  const [colorGradeStatus, setColorGradeStatus] = useState<ColorGradeStatus>("idle");
+  const [colorGradeError, setColorGradeError] = useState<string | null>(null);
+  const [colorGrade, setColorGrade] = useState<ColorGradeResponse | null>(null);
 
   const selectFile = useCallback(
     (next: File) => {
@@ -46,6 +54,9 @@ export function useImageAnalysis(): ImageAnalysisState {
       setAi(null);
       setAiError(null);
       setAiStatus("idle");
+      setColorGrade(null);
+      setColorGradeError(null);
+      setColorGradeStatus("idle");
     },
     [previewUrl],
   );
@@ -83,6 +94,23 @@ export function useImageAnalysis(): ImageAnalysisState {
     }
   }, [file]);
 
+  const fetchColorGrade = useCallback(async () => {
+    if (!file || colorGradeStatus === "loading" || colorGradeStatus === "success") return;
+    setColorGradeStatus("loading");
+    setColorGradeError(null);
+    try {
+      const context = result
+        ? { ...result, scene_summary: ai?.scene?.summary ?? null }
+        : null;
+      const response = await requestColorGrade(file, context);
+      setColorGrade(response);
+      setColorGradeStatus("success");
+    } catch (err) {
+      setColorGradeError(err instanceof Error ? err.message : "Color grading failed.");
+      setColorGradeStatus("error");
+    }
+  }, [file, result, ai, colorGradeStatus]);
+
   const reset = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setFile(null);
@@ -93,6 +121,9 @@ export function useImageAnalysis(): ImageAnalysisState {
     setAi(null);
     setAiError(null);
     setAiStatus("idle");
+    setColorGrade(null);
+    setColorGradeError(null);
+    setColorGradeStatus("idle");
   }, [previewUrl]);
 
   return {
@@ -104,8 +135,12 @@ export function useImageAnalysis(): ImageAnalysisState {
     aiStatus,
     aiError,
     ai,
+    colorGradeStatus,
+    colorGradeError,
+    colorGrade,
     selectFile,
     analyze,
+    fetchColorGrade,
     reset,
   };
 }

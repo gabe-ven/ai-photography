@@ -3,7 +3,7 @@ from PIL import Image
 
 from app.services.vision.analysis_pipeline import run_vision_analysis
 from app.services.vision.brightness import compute_brightness
-from app.services.vision.colors import dominant_colors
+from app.services.vision.colors import color_samples, dominant_colors
 from app.services.vision.contrast import compute_contrast
 from app.services.vision.dynamic_range import compute_dynamic_range
 from app.services.vision.histogram import compute_histogram
@@ -75,6 +75,32 @@ def test_dominant_colors_two_tone_ordering() -> None:
     assert abs(colors[0]["proportion"] - 0.7) < 0.01
 
 
+# --- color samples ---------------------------------------------------------
+
+
+def test_color_samples_capped_and_in_range() -> None:
+    img = np.random.randint(0, 256, (64, 64, 3), dtype=np.uint8)
+    samples = color_samples(img, n=200)
+    assert len(samples) == 200
+    for r, g, b in samples:
+        assert 0 <= r <= 255
+        assert 0 <= g <= 255
+        assert 0 <= b <= 255
+
+
+def test_color_samples_smaller_than_cap_returns_all_pixels() -> None:
+    img = np.full((5, 5, 3), 128, dtype=np.uint8)
+    samples = color_samples(img, n=200)
+    assert len(samples) == 25
+    assert all(px == [128, 128, 128] for px in samples)
+
+
+def test_color_samples_one_pixel_image() -> None:
+    tiny = np.array([[[10, 20, 30]]], dtype=np.uint8)
+    samples = color_samples(tiny)
+    assert samples == [[10, 20, 30]]
+
+
 # --- histogram ------------------------------------------------------------
 
 
@@ -124,6 +150,7 @@ def test_pipeline_structure_and_orientation() -> None:
         "contrast",
         "sharpness",
         "dominant_colors",
+        "color_samples",
         "histogram",
         "dynamic_range",
         "dimensions",

@@ -75,6 +75,10 @@ class VisionInfo(BaseModel):
     contrast: float
     sharpness: float
     dominant_colors: list[ColorSwatch]
+    color_samples: list[list[int]] = Field(
+        default_factory=list,
+        description="Raw [r, g, b] pixel scatter for the 3D color-space point cloud.",
+    )
     histogram: Histogram
     dynamic_range: DynamicRange
     dimensions: Dimensions
@@ -285,3 +289,31 @@ class AIAnalysis(BaseModel):
 
 class AIAnalysisResponse(BaseModel):
     ai: AIAnalysis = Field(..., description="AI interpretation of the photo.")
+
+
+# --- Color grading -----------------------------------------------------
+# A single Claude call suggesting slider-ready adjustments. Mirrors
+# AIAnalysis: every field degrades gracefully, and `available=False` on
+# any failure rather than raising.
+
+
+class GradingAdjustments(BaseModel):
+    exposure: float = 0.0
+    contrast: float = 0.0
+    highlights: float = 0.0
+    shadows: float = 0.0
+    whites: float = 0.0
+    blacks: float = 0.0
+    temperature: float = 0.0
+    tint: float = 0.0
+    saturation: float = 0.0
+    vibrance: float = 0.0
+    sharpness: float = 0.0
+
+
+class ColorGradeResponse(BaseModel):
+    available: bool
+    adjustments: GradingAdjustments = Field(default_factory=GradingAdjustments)
+    reasoning: str | None = None
+    style: str | None = None
+    reason: str | None = None

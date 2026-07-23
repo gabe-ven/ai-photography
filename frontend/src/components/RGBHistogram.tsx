@@ -12,7 +12,7 @@ const CHANNEL_STYLES: Record<Channel, { fill: string; stroke: string }> = {
 };
 
 const VIEW_W = 400;
-const VIEW_H = 140;
+const VIEW_H = 180;
 
 export function RGBHistogram({ histogram }: { histogram: Histogram }) {
   const [visible, setVisible] = useState<Record<Channel, boolean>>({
@@ -48,33 +48,14 @@ export function RGBHistogram({ histogram }: { histogram: Histogram }) {
   const channels: Channel[] = ["r", "g", "b"];
 
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
-          Histogram
-        </span>
-        <div className="flex items-center gap-3">
-          {channels.map((c) => (
-            <label
-              key={c}
-              className="flex cursor-pointer items-center gap-1.5 font-mono text-[10px] uppercase"
-              style={{ color: visible[c] ? CHANNEL_STYLES[c].stroke : "#999994" }}
-            >
-              <input
-                type="checkbox"
-                checked={visible[c]}
-                onChange={() => setVisible((v) => ({ ...v, [c]: !v[c] }))}
-                className="h-3 w-3"
-              />
-              {c}
-            </label>
-          ))}
-        </div>
-      </div>
+    <div className="border-t border-border pt-4">
+      <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+        Histogram
+      </span>
       <svg
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         preserveAspectRatio="none"
-        className="h-[140px] w-full"
+        className="mt-2 h-[180px] w-full"
         aria-label="RGB histogram"
       >
         <line
@@ -102,6 +83,28 @@ export function RGBHistogram({ histogram }: { histogram: Histogram }) {
             ),
         )}
       </svg>
+      <div className="mt-3 flex items-center gap-2">
+        {channels.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setVisible((v) => ({ ...v, [c]: !v[c] }))}
+            aria-pressed={visible[c]}
+            className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors"
+            style={{
+              borderColor: CHANNEL_STYLES[c].stroke,
+              backgroundColor: visible[c] ? CHANNEL_STYLES[c].fill : "transparent",
+              color: visible[c] ? CHANNEL_STYLES[c].stroke : "#999994",
+            }}
+          >
+            <span
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: CHANNEL_STYLES[c].stroke }}
+            />
+            {c}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

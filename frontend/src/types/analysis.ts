@@ -63,6 +63,7 @@ export interface VisionInfo {
   contrast: number;
   sharpness: number;
   dominant_colors: ColorSwatch[];
+  color_samples: number[][];
   histogram: Histogram;
   dynamic_range: DynamicRange;
   dimensions: Dimensions;
@@ -279,4 +280,37 @@ export interface AIAnalysis {
 
 export interface AIAnalysisResponse {
   ai: AIAnalysis;
+}
+
+// --- Color grading -----------------------------------------------------
+
+export interface GradingAdjustments {
+  exposure: number;
+  contrast: number;
+  highlights: number;
+  shadows: number;
+  whites: number;
+  blacks: number;
+  temperature: number;
+  tint: number;
+  saturation: number;
+  vibrance: number;
+  sharpness: number;
+}
+
+export type ColorGradeStyle =
+  | "natural"
+  | "cinematic"
+  | "moody"
+  | "airy"
+  | "contrasty"
+  | "warm"
+  | "cool";
+
+export interface ColorGradeResponse {
+  available: boolean;
+  adjustments: GradingAdjustments;
+  reasoning: string | null;
+  style: ColorGradeStyle | null;
+  reason: string | null;
 }

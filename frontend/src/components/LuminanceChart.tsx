@@ -4,7 +4,7 @@ import * as d3 from "d3";
 import type { Histogram } from "@/types/analysis";
 
 const VIEW_W = 400;
-const VIEW_H = 140;
+const VIEW_H = 180;
 
 export function LuminanceChart({ histogram }: { histogram: Histogram }) {
   const { path, meanX } = useMemo(() => {
@@ -38,14 +38,14 @@ export function LuminanceChart({ histogram }: { histogram: Histogram }) {
   }, [histogram]);
 
   return (
-    <div className="mt-6">
+    <div className="border-t border-border pt-4">
       <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
         Luminance
       </span>
       <svg
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         preserveAspectRatio="none"
-        className="mt-2 h-[140px] w-full"
+        className="mt-2 h-[180px] w-full"
         aria-label="Luminance distribution"
       >
         <motion.path

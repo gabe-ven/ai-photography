@@ -10,6 +10,11 @@ import numpy as np
 # than running k-means on a full 26 MP image.
 _MAX_PIXELS_FOR_KMEANS = 4096
 
+# Raw pixel scatter for the 3D color-space point cloud. Much smaller than the
+# k-means sample — this renders as individual WebGL points on the frontend,
+# so it's sized for visual density rather than statistical accuracy.
+_MAX_COLOR_SAMPLES = 500
+
 
 def dominant_colors(image: np.ndarray, k: int = 5) -> list[dict]:
     """Return up to `k` dominant colors, sorted by coverage (most first).
@@ -57,3 +62,25 @@ def dominant_colors(image: np.ndarray, k: int = 5) -> list[dict]:
             }
         )
     return result
+
+
+def color_samples(image: np.ndarray, n: int = _MAX_COLOR_SAMPLES) -> list[list[int]]:
+    """Return up to `n` raw pixel RGB triples, randomly sampled without replacement.
+
+    Unlike `dominant_colors` (which reduces the image to a handful of cluster
+    centers), this preserves the actual scatter of individual pixel colors —
+    used to plot a 3D RGB color-space point cloud on the frontend.
+    """
+    from app.services.vision._utils import to_rgb
+
+    rgb = to_rgb(image)
+    pixels = rgb.reshape(-1, 3)
+    if pixels.size == 0:
+        return []
+
+    if len(pixels) > n:
+        rng = np.random.default_rng(seed=42)
+        idx = rng.choice(len(pixels), size=n, replace=False)
+        pixels = pixels[idx]
+
+    return pixels.astype(int).tolist()

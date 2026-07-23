@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { CompositionDashboard } from "@/components/composition/CompositionDashboard";
 import { AICritiqueDashboard } from "@/features/ai/AICritiqueDashboard";
 import { FujifilmRecipeSection } from "@/features/ai/FujifilmRecipeSection";
+import { EditPage } from "@/features/edit/EditPage";
 import { VisionDashboard } from "@/features/vision/VisionDashboard";
 import { HERO_SPRING, SUBTITLE_SPRING } from "@/lib/motionVariants";
 import { CameraInfoCard } from "./CameraInfoCard";
@@ -19,10 +20,19 @@ export function UploadPanel() {
     aiStatus,
     aiError,
     ai,
+    colorGrade,
+    colorGradeStatus,
+    colorGradeError,
+    fetchColorGrade,
     selectFile,
     analyze,
     reset,
   } = useImageAnalysis();
+  const [view, setView] = useState<"results" | "editing">("results");
+
+  useEffect(() => {
+    setView("results");
+  }, [file]);
 
   // No photo yet — hero + dropzone.
   if (!file || !previewUrl) {
@@ -121,6 +131,20 @@ export function UploadPanel() {
     );
   }
 
+  // Editing state — sliders + live canvas preview over the results data.
+  if (view === "editing" && file && previewUrl) {
+    return (
+      <EditPage
+        file={file}
+        previewUrl={previewUrl}
+        colorGrade={colorGrade}
+        colorGradeStatus={colorGradeStatus}
+        colorGradeError={colorGradeError}
+        onBack={() => setView("results")}
+      />
+    );
+  }
+
   // Analysis done (success or error) — the full report.
   return (
     <motion.div
@@ -170,6 +194,17 @@ export function UploadPanel() {
               loading={false}
               error={aiStatus === "error" ? aiError : null}
             />
+            <div className="flex justify-start">
+              <button
+                onClick={() => {
+                  setView("editing");
+                  fetchColorGrade();
+                }}
+                className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+              >
+                Edit photo →
+              </button>
+            </div>
             {ai?.fujifilm_recipe?.applicable === true && (
               <FujifilmRecipeSection recipe={ai.fujifilm_recipe} />
             )}

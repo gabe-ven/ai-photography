@@ -11,11 +11,15 @@
   },
   "dependencies": {
     "@nivo/radar": "^0.99.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@types/three": "^0.185.1",
     "d3": "^7.9.0",
     "framer-motion": "^12.42.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recharts": "^3.9.0"
+    "recharts": "^3.9.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

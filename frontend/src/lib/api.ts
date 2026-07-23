@@ -1,4 +1,8 @@
-import type { AnalysisResponse, AIAnalysisResponse } from "@/types/analysis";
+import type {
+  AnalysisResponse,
+  AIAnalysisResponse,
+  ColorGradeResponse,
+} from "@/types/analysis";
 
 export const MAX_UPLOAD_MB = 25;
 export const ACCEPTED_TYPES = [
@@ -58,4 +62,19 @@ export async function generateAIAnalysis(
   body.append("file", file);
   if (context) body.append("context", JSON.stringify(context));
   return postForm<AIAnalysisResponse>("/api/ai-analysis", body);
+}
+
+/**
+ * Request AI color grading suggestions. `context` is typically the prior
+ * /analyze response merged with the AI critique's scene summary, so the
+ * model grounds its suggestion in the already-computed measurements.
+ */
+export async function requestColorGrade(
+  file: File,
+  context?: Record<string, unknown> | null,
+): Promise<ColorGradeResponse> {
+  const body = new FormData();
+  body.append("file", file);
+  if (context) body.append("context", JSON.stringify(context));
+  return postForm<ColorGradeResponse>("/api/color-grade", body);
 }

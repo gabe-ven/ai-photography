@@ -8,7 +8,7 @@ export function DominantColors({ colors }: { colors: ColorSwatch[] }) {
   }
 
   return (
-    <div>
+    <div className="border-t border-border pt-4">
       <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
         Dominant colors
       </span>

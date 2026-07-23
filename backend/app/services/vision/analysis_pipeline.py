@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image
 
 from app.services.vision.brightness import compute_brightness
-from app.services.vision.colors import dominant_colors
+from app.services.vision.colors import color_samples, dominant_colors
 from app.services.vision.contrast import compute_contrast
 from app.services.vision.dynamic_range import compute_dynamic_range
 from app.services.vision.histogram import compute_histogram
@@ -41,6 +41,7 @@ def run_vision_analysis(image: Image.Image) -> dict:
         "contrast": compute_contrast(rgb),
         "sharpness": compute_sharpness(rgb),
         "dominant_colors": dominant_colors(rgb),
+        "color_samples": color_samples(rgb),
         "histogram": compute_histogram(rgb),
         "dynamic_range": compute_dynamic_range(rgb),
         "dimensions": {

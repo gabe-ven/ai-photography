@@ -16,13 +16,14 @@ from app.schemas.analysis import (
     AIAnalysis,
     AIAnalysisResponse,
     AnalysisResponse,
+    ColorGradeResponse,
     CompositionInfo,
     ExifInfo,
     ImageInfo,
     VisionInfo,
 )
 from app.services import image_io
-from app.services.ai import photo_critique
+from app.services.ai import color_grading, photo_critique
 from app.services.composition import composition_pipeline
 from app.services.exif import exif_service
 from app.services.vision import analysis_pipeline
@@ -102,3 +103,43 @@ async def ai_analysis(
 
     critique = photo_critique.generate_critique(image, parsed_context)
     return AIAnalysisResponse(ai=AIAnalysis(**critique))
+
+
+@router.post("/color-grade", response_model=ColorGradeResponse)
+async def color_grade(
+    file: UploadFile = File(...),
+    context: str | None = Form(
+        default=None,
+        description="Optional JSON string of context — the prior /analyze "
+        "response, optionally merged with the AI critique's scene summary — "
+        "used to ground the suggested grade in measured facts.",
+    ),
+    settings: Settings = Depends(get_settings),
+) -> ColorGradeResponse:
+    """Suggest color grading adjustments for the uploaded photo.
+
+    Same request contract as /ai-analysis: file + optional JSON context.
+    """
+    data = await file.read()
+
+    try:
+        image_io.validate_upload(
+            data, file.content_type, max_bytes=settings.max_upload_bytes
+        )
+        image = image_io.open_image(data)
+    except image_io.ImageValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+
+    parsed_context: dict | None = None
+    if context:
+        try:
+            loaded = json.loads(context)
+            if isinstance(loaded, dict):
+                parsed_context = loaded
+        except json.JSONDecodeError:
+            parsed_context = None
+
+    result = color_grading.generate_color_grade(image, parsed_context)
+    return ColorGradeResponse(**result)
