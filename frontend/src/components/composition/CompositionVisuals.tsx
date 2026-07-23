@@ -20,6 +20,7 @@ export function CompositionVisuals({
   semantic?: SemanticComposition | null;
 }) {
   const hasLines = composition.leading_lines.lines.length > 0;
+  const edgeDensitySpan = hasLines ? "lg:col-span-2" : "lg:col-span-3";
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -35,7 +36,7 @@ export function CompositionVisuals({
         <CompositionScores composition={composition} semantic={semantic} />
       </ChartCard>
 
-      <ChartCard title="Edge density by region" delay={0.15} className="lg:col-span-2">
+      <ChartCard title="Edge density by region" delay={0.15} className={edgeDensitySpan}>
         <EdgeDensityChart composition={composition} />
       </ChartCard>
 

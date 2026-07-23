@@ -30,7 +30,7 @@ export function ColorSpaceCloud({ samples }: ColorSpaceCloudProps) {
         Color space
       </span>
       <div className="mt-2 h-[420px] w-full">
-        <Canvas camera={{ position: [2.6, 2.1, 2.6], fov: 45 }} dpr={[1, 2]}>
+        <Canvas camera={{ position: [2.2, 1.6, 2.2], fov: 45 }} dpr={[1, 2]}>
           <ambientLight intensity={0.6} />
           <directionalLight position={[3, 4, 2]} intensity={0.8} />
           <PointCloud samples={samples} />
@@ -38,6 +38,7 @@ export function ColorSpaceCloud({ samples }: ColorSpaceCloudProps) {
           <GridFloor />
           <AxisTicks />
           <OrbitControls
+            target={[0, 0, 0]}
             enablePan={false}
             enableDamping
             dampingFactor={0.08}

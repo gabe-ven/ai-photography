@@ -187,6 +187,7 @@ export function CompositionMetrics({
           key={m.key}
           variants={staggerItem}
           whileHover={{ y: -3, borderColor: "#999994" }}
+          whileTap={{ y: 0, scale: 0.99 }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
           className="rounded-[2px] border border-border bg-surface p-4"
         >

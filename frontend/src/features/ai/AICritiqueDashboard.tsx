@@ -1,13 +1,15 @@
 import { motion } from "framer-motion";
 import { Section } from "@/components/Section";
 import { ShimmerOverlay } from "@/components/Shimmer";
-import { sectionReveal, staggerContainer, staggerItem } from "@/lib/motionVariants";
+import { sectionMount, staggerContainer, staggerItem } from "@/lib/motionVariants";
 import type { AIAnalysis, CameraSettings } from "@/types/analysis";
 
 interface AICritiqueDashboardProps {
   ai: AIAnalysis | null;
   loading?: boolean;
   error?: string | null;
+  /** Stagger offset (seconds) so this section can cascade in after siblings. */
+  delay?: number;
 }
 
 const SECTION_DESCRIPTION =
@@ -17,9 +19,10 @@ export function AICritiqueDashboard({
   ai,
   loading = false,
   error = null,
+  delay = 0,
 }: AICritiqueDashboardProps) {
   return (
-    <motion.div {...sectionReveal(0)}>
+    <motion.div {...sectionMount(delay)}>
       <Section
         number="03"
         title="AI CRITIQUE"

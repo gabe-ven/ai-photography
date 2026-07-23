@@ -46,7 +46,7 @@ export function CompositionOverlay({
   }, []);
 
   return (
-    <div className="relative w-full overflow-hidden border border-border bg-surface">
+    <div className="relative w-full overflow-hidden bg-bg">
       <PhotoLayer imageUrl={imageUrl} onLoad={handleLoad} />
 
       <AnimatePresence>
@@ -116,7 +116,7 @@ const PhotoLayer = memo(function PhotoLayer({
       onLoad={(e) =>
         onLoad(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)
       }
-      className="block max-h-[520px] w-full select-none object-contain"
+      className="block max-h-[700px] w-full select-none object-contain"
     />
   );
 });

@@ -1,14 +1,17 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { useEffect, useState } from "react";
 import { CompositionDashboard } from "@/components/composition/CompositionDashboard";
+import { ShimmerOverlay } from "@/components/Shimmer";
 import { AICritiqueDashboard } from "@/features/ai/AICritiqueDashboard";
 import { FujifilmRecipeSection } from "@/features/ai/FujifilmRecipeSection";
 import { EditPage } from "@/features/edit/EditPage";
 import { VisionDashboard } from "@/features/vision/VisionDashboard";
-import { HERO_SPRING, SUBTITLE_SPRING } from "@/lib/motionVariants";
+import { CARD_SPRING, HERO_SPRING, SUBTITLE_SPRING } from "@/lib/motionVariants";
 import { CameraInfoCard } from "./CameraInfoCard";
 import { Dropzone } from "./Dropzone";
 import { useImageAnalysis } from "./useImageAnalysis";
+
+type Stage = "hero" | "analyzing" | "preview" | "editing" | "results";
 
 export function UploadPanel() {
   const {
@@ -34,184 +37,198 @@ export function UploadPanel() {
     setView("results");
   }, [file]);
 
-  // No photo yet — hero + dropzone.
-  if (!file || !previewUrl) {
-    return (
-      <div className="pb-24 pt-20 md:pt-32">
-        <p className="font-mono text-xs uppercase tracking-widest text-muted">
-          AI Photography Critique / V2.0
-        </p>
-        <h1 className="mt-6 leading-[0.95]">
-          <motion.span
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={HERO_SPRING}
-            className="block font-serif text-7xl italic tracking-tight text-heading md:text-9xl"
-          >
-            Photographer
-          </motion.span>
-          <motion.span
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ ...HERO_SPRING, delay: 0.1 }}
-            className="block font-sans text-7xl font-black tracking-tighter text-heading md:text-9xl"
-          >
-            Brain.
-          </motion.span>
-        </h1>
-        <motion.p
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ ...SUBTITLE_SPRING, delay: 0.25 }}
-          className="mt-6 max-w-md text-lg font-light text-muted"
-        >
-          Upload a photograph. Get an AI-powered critique grounded in real
-          measurements.
-        </motion.p>
-        <div className="mt-12">
-          <Dropzone onFile={selectFile} />
-        </div>
-        {error && <ErrorBanner message={error} />}
-      </div>
-    );
-  }
+  const stage: Stage = !file
+    ? "hero"
+    : status === "loading" || aiStatus === "loading"
+      ? "analyzing"
+      : status === "idle"
+        ? "preview"
+        : view === "editing"
+          ? "editing"
+          : "results";
 
-  // Analysis in flight (CV metrics and/or the AI critique) — show the full
-  // analyzing animation until everything is ready, then reveal the report.
-  if (status === "loading" || aiStatus === "loading") {
-    return <AnalyzingView previewUrl={previewUrl} fileName={file.name} />;
-  }
-
-  // Photo selected but not analyzed yet — big preview, actions underneath.
-  if (status === "idle") {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="mx-auto flex max-w-2xl flex-col items-center gap-6 py-16"
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", stiffness: 180, damping: 24 }}
-          className="inline-block max-w-full overflow-hidden border border-border bg-surface"
-        >
-          <img
-            src={previewUrl}
-            alt={file.name}
-            className="block max-h-[520px] w-auto max-w-full"
-          />
-          <p className="truncate px-4 py-3 font-mono text-xs text-muted">{file.name}</p>
-        </motion.div>
-        <div className="flex justify-center gap-3">
-          <motion.button
-            onClick={analyze}
-            initial="rest"
-            whileHover="hover"
-            className="bg-heading px-10 py-4 font-mono text-xs uppercase tracking-widest text-white transition-colors hover:bg-zinc-800"
-          >
-            Analyze{" "}
-            <motion.span
-              className="inline-block"
-              variants={{ rest: { x: 0 }, hover: { x: 6 } }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            >
-              →
-            </motion.span>
-          </motion.button>
-          <button
-            onClick={reset}
-            className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
-          >
-            Choose another
-          </button>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // Editing state — sliders + live canvas preview over the results data.
-  if (view === "editing" && file && previewUrl) {
-    return (
-      <EditPage
-        file={file}
-        previewUrl={previewUrl}
-        colorGrade={colorGrade}
-        colorGradeStatus={colorGradeStatus}
-        colorGradeError={colorGradeError}
-        onBack={() => setView("results")}
-      />
-    );
-  }
-
-  // Analysis done (success or error) — the full report.
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="space-y-16 py-16"
-    >
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="flex flex-col items-start gap-3">
-          <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
-            <img
-              src={previewUrl}
-              alt={file.name}
-              className="block max-h-[520px] w-auto max-w-full"
-            />
-          </div>
-          <button
-            onClick={reset}
-            className="self-start border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+    <AnimatePresence mode="popLayout">
+      {stage === "hero" && (
+        <motion.div key="hero" exit={{ opacity: 0 }} className="pb-24 pt-20 md:pt-32">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted">
+            AI Photography Critique / V2.0
+          </p>
+          <h1 className="mt-6 leading-[0.95]">
+            <motion.span
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={HERO_SPRING}
+              className="block font-serif text-7xl italic tracking-tight text-heading md:text-9xl"
+            >
+              Frame
+            </motion.span>
+            <motion.span
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ ...HERO_SPRING, delay: 0.1 }}
+              className="block font-sans text-7xl font-black tracking-tighter text-heading md:text-9xl"
+            >
+              Grader.
+            </motion.span>
+          </h1>
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ ...SUBTITLE_SPRING, delay: 0.25 }}
+            className="mt-6 max-w-md text-lg font-light text-muted"
           >
-            Choose another →
-          </button>
-        </div>
-        <div className="flex flex-col justify-center gap-6">
-          {result && <CameraInfoCard exif={result.exif} />}
-        </div>
-      </div>
+            Upload a photograph. Get an AI-powered critique grounded in real
+            measurements.
+          </motion.p>
+          <div className="mt-12">
+            <Dropzone onFile={selectFile} />
+          </div>
+          {error && <ErrorBanner message={error} />}
+        </motion.div>
+      )}
 
-      <div className="space-y-16">
-        <VisionDashboard
-          vision={result?.vision ?? null}
-          loading={false}
-          error={status === "error" ? error : null}
-        />
-        <CompositionDashboard
-          composition={result?.composition ?? null}
-          semantic={ai?.semantic_composition ?? null}
-          imageUrl={previewUrl}
-          loading={false}
-          error={status === "error" ? error : null}
-        />
-        {status === "success" && (
-          <>
-            <AICritiqueDashboard
-              ai={ai}
-              loading={false}
-              error={aiStatus === "error" ? aiError : null}
-            />
-            <div className="flex justify-start">
-              <button
-                onClick={() => {
-                  setView("editing");
-                  fetchColorGrade();
-                }}
-                className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
-              >
-                Edit photo →
-              </button>
-            </div>
-            {ai?.fujifilm_recipe?.applicable === true && (
-              <FujifilmRecipeSection recipe={ai.fujifilm_recipe} />
+      {/* Analysis in flight (CV metrics and/or the AI critique) — show the
+          full analyzing animation until everything is ready, then reveal
+          the report. */}
+      {stage === "analyzing" && file && (
+        <AnalyzingView key="analyzing" previewUrl={previewUrl} fileName={file.name} />
+      )}
+
+      {/* Photo selected but not analyzed yet — big preview, actions underneath.
+          The <motion.img> below shares layoutId="photo-preview" with the one
+          in the results branch, so Framer Motion animates the photo directly
+          from this large hero position into its smaller results position
+          when the AI critique finishes. */}
+      {stage === "preview" && file && (
+        <motion.div
+          key="preview"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="mx-auto flex max-w-2xl flex-col items-center gap-6 py-16"
+        >
+          <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
+            {previewUrl ? (
+              <motion.img
+                layoutId="photo-preview"
+                transition={CARD_SPRING}
+                src={previewUrl}
+                alt={file.name}
+                className="block max-h-[520px] w-auto max-w-full"
+              />
+            ) : (
+              <PhotoSkeleton />
             )}
-          </>
-        )}
-      </div>
-    </motion.div>
+            <p className="truncate px-4 py-3 font-mono text-xs text-muted">{file.name}</p>
+          </div>
+          <div className="flex justify-center gap-3">
+            <AnalyzeButton onClick={analyze} />
+            <button
+              onClick={reset}
+              className="border border-border px-10 py-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+            >
+              Choose another
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Editing state — sliders + live canvas preview over the results data. */}
+      {stage === "editing" && file && (
+        <EditPage
+          key="editing"
+          file={file}
+          colorGrade={colorGrade}
+          colorGradeStatus={colorGradeStatus}
+          colorGradeError={colorGradeError}
+          onBack={() => setView("results")}
+        />
+      )}
+
+      {/* Analysis done (success or error) — the full report. */}
+      {stage === "results" && file && (
+        <motion.div
+          key="results"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="space-y-16 py-16"
+        >
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="flex flex-col items-start gap-3">
+              <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
+                {previewUrl ? (
+                  <motion.img
+                    layoutId="photo-preview"
+                    transition={CARD_SPRING}
+                    src={previewUrl}
+                    alt={file.name}
+                    className="block max-h-[520px] w-auto max-w-full"
+                  />
+                ) : (
+                  <PhotoSkeleton />
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={reset}
+                  className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+                >
+                  Choose another →
+                </button>
+                {status === "success" && (
+                  <button
+                    onClick={() => {
+                      setView("editing");
+                      fetchColorGrade();
+                    }}
+                    className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
+                  >
+                    Edit photo →
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col justify-center gap-6">
+              {result && <CameraInfoCard exif={result.exif} />}
+            </div>
+          </div>
+
+          <div className="space-y-16">
+            <VisionDashboard
+              vision={result?.vision ?? null}
+              loading={false}
+              error={status === "error" ? error : null}
+              delay={0}
+            />
+            <CompositionDashboard
+              composition={result?.composition ?? null}
+              semantic={ai?.semantic_composition ?? null}
+              imageUrl={previewUrl}
+              loading={false}
+              error={status === "error" ? error : null}
+              delay={0.2}
+            />
+            {status === "success" && (
+              <>
+                <AICritiqueDashboard
+                  ai={ai}
+                  loading={false}
+                  error={aiStatus === "error" ? aiError : null}
+                  delay={0.4}
+                />
+                {ai?.fujifilm_recipe?.applicable === true && (
+                  <FujifilmRecipeSection recipe={ai.fujifilm_recipe} />
+                )}
+              </>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -229,7 +246,7 @@ function AnalyzingView({
   previewUrl,
   fileName,
 }: {
-  previewUrl: string;
+  previewUrl: string | null;
   fileName: string;
 }) {
   const [messageIndex, setMessageIndex] = useState(0);
@@ -246,15 +263,20 @@ function AnalyzingView({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
       className="mx-auto flex max-w-2xl flex-col items-center gap-8 py-16"
     >
       <div className="relative inline-block max-w-full overflow-hidden border border-border bg-surface">
-        <img
-          src={previewUrl}
-          alt={fileName}
-          className="block max-h-[480px] w-auto max-w-full"
-        />
+        {previewUrl ? (
+          <img
+            src={previewUrl}
+            alt={fileName}
+            className="block max-h-[480px] w-auto max-w-full"
+          />
+        ) : (
+          <PhotoSkeleton className="h-[480px] w-[360px]" />
+        )}
 
         {/* Sweeping glow band + bright scan edge. */}
         <motion.div
@@ -294,6 +316,26 @@ function AnalyzingView({
   );
 }
 
+const ARROW_SPRING = { type: "spring" as const, stiffness: 500, damping: 30 };
+
+function AnalyzeButton({ onClick }: { onClick: () => void }) {
+  const arrowX = useMotionValue(0);
+
+  return (
+    <motion.button
+      onClick={onClick}
+      onHoverStart={() => animate(arrowX, 6, ARROW_SPRING)}
+      onHoverEnd={() => animate(arrowX, 0, ARROW_SPRING)}
+      className="bg-heading px-10 py-4 font-mono text-xs uppercase tracking-widest text-white transition-colors hover:bg-zinc-800"
+    >
+      Analyze{" "}
+      <motion.span className="inline-block" style={{ x: arrowX }}>
+        →
+      </motion.span>
+    </motion.button>
+  );
+}
+
 function Spinner() {
   return (
     <motion.div
@@ -316,6 +358,16 @@ function CornerBrackets() {
       <span className="absolute bottom-3 left-3 h-6 w-6 border-b-2 border-l-2 border-heading/70" />
       <span className="absolute bottom-3 right-3 h-6 w-6 border-b-2 border-r-2 border-heading/70" />
     </motion.div>
+  );
+}
+
+/** Sized placeholder shown for the brief window before the preview
+ * thumbnail finishes decoding. */
+function PhotoSkeleton({ className = "h-[360px] w-[300px]" }: { className?: string }) {
+  return (
+    <div className={`relative overflow-hidden bg-bg ${className}`}>
+      <ShimmerOverlay />
+    </div>
   );
 }
 

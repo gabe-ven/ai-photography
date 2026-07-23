@@ -40,20 +40,23 @@ _SYSTEM_PROMPT = (
     "composition geometry). Ground your analysis in those measurements: when "
     "EXIF camera settings are provided, EXPLAIN them rather than guessing; when "
     "they are absent, ESTIMATE plausible settings from the image and say so.\n\n"
+    "This renders as a scannable card, not an essay. Favor short phrases over "
+    "full sentences, cut filler words and hedging, and stay within every word "
+    "limit below — they are hard caps, not targets to approach.\n\n"
     "Respond with ONLY a single JSON object (no markdown fences, no prose) with "
     "exactly this shape:\n"
     "{\n"
     '  "scene": {\n'
-    '    "summary": "one vivid sentence describing the photo",\n'
+    '    "summary": "a punchy phrase describing the photo, under 12 words",\n'
     '    "setting": "e.g. outdoor coastal / indoor studio / urban street",\n'
-    '    "tags": ["3-6 short descriptive tags"]\n'
+    '    "tags": ["3-5 short descriptive tags"]\n'
     "  },\n"
     '  "subject": {\n'
     '    "primary": "the main subject in a few words",\n'
-    '    "description": "one sentence on the subject and how it is framed"\n'
+    '    "description": "how it is framed, under 12 words"\n'
     "  },\n"
     '  "lighting": {\n'
-    '    "summary": "one sentence on the light",\n'
+    '    "summary": "the light in a phrase, under 10 words",\n'
     '    "direction": "front | back | side | top | diffuse | mixed | unknown",\n'
     '    "quality": "hard | soft | diffuse | mixed | unknown",\n'
     '    "time_of_day": "golden hour | blue hour | midday | overcast | night | indoor | unknown"\n'
@@ -64,22 +67,22 @@ _SYSTEM_PROMPT = (
     '    "iso": "e.g. 100 or null",\n'
     '    "focal_length": "e.g. 35mm or null",\n'
     '    "from_exif": true/false (true if taken from provided EXIF, false if estimated),\n'
-    '    "reasoning": "one or two sentences explaining the settings"\n'
+    '    "reasoning": "one short sentence explaining the settings, under 18 words"\n'
     "  },\n"
     '  "composition_critique": {\n'
-    '    "strengths": ["2-4 specific things that work"],\n'
-    '    "improvements": ["1-3 concrete, actionable suggestions"],\n'
-    '    "overall": "a two to three sentence overall assessment"\n'
+    '    "strengths": ["exactly 2 specific things that work, under 10 words each"],\n'
+    '    "improvements": ["1-2 concrete, actionable suggestions, under 10 words each"],\n'
+    '    "overall": "one short sentence overall assessment, under 18 words"\n'
     "  },\n"
-    '  "recreation_guide": ["3-6 ordered, practical steps to recreate this shot"],\n'
+    '  "recreation_guide": ["3-4 ordered, practical steps, under 10 words each"],\n'
     '  "semantic_composition": {\n'
     '    "leading_lines": {\n'
     '      "present": true/false,\n'
     '      "strength": 0-100 (0 when none are present),\n'
-    '      "description": "one sentence — what lines and where they lead"\n'
+    '      "description": "what lines and where they lead, under 10 words"\n'
     "    },\n"
-    '    "rule_of_thirds": { "score": 0-100, "reasoning": "one sentence" },\n'
-    '    "negative_space": { "score": 0-100, "reasoning": "one sentence" }\n'
+    '    "rule_of_thirds": { "score": 0-100, "reasoning": "under 10 words" },\n'
+    '    "negative_space": { "score": 0-100, "reasoning": "under 10 words" }\n'
     "  },\n"
     '  "fujifilm_recipe": {\n'
     '    "applicable": true/false (false when the EXIF camera make is not Fujifilm, or EXIF is absent),\n'
@@ -94,7 +97,7 @@ _SYSTEM_PROMPT = (
     '      "sharpness": number (typically -4 to +4),\n'
     '      "noise_reduction": number (typically -4 to +4)\n'
     "    },\n"
-    '    "reasoning": "one sentence — why this recipe fits this scene/light"\n'
+    '    "reasoning": "why this recipe fits, under 12 words"\n'
     "  }\n"
     "}\n"
     "Judge semantic_composition from the image itself — this is your independent, "
@@ -103,7 +106,8 @@ _SYSTEM_PROMPT = (
     "For fujifilm_recipe, recommend a film simulation and in-camera settings that suit "
     "the scene and light; set applicable to false when the EXIF camera make is not a "
     "Fujifilm body (including when no EXIF is present), but still provide a usable recipe. "
-    "Be specific and practical. Prefer concrete photographic advice over generic praise."
+    "Be specific and practical. Prefer concrete photographic advice over generic praise, "
+    "and prefer a terse phrase over a complete sentence wherever the shape above allows it."
 )
 
 

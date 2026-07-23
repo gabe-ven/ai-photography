@@ -33,6 +33,7 @@ export function Dropzone({ onFile }: DropzoneProps) {
         scale: dragging ? 1.015 : 1,
         borderColor: dragging ? "#0a0a08" : "#e8e8e4",
       }}
+      exit={{ opacity: 0, scale: 0.96, y: -8 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className="flex cursor-pointer flex-col items-center justify-center gap-3 border border-dashed p-16 text-center hover:border-heading/40"
     >

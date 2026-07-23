@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Section } from "@/components/Section";
-import { sectionReveal } from "@/lib/motionVariants";
+import { sectionMount } from "@/lib/motionVariants";
 import type { CompositionInfo, SemanticComposition } from "@/types/analysis";
 import { CompositionMetrics } from "./CompositionMetrics";
 import { CompositionOverlay, type OverlayToggles } from "./CompositionOverlay";
@@ -13,6 +13,8 @@ interface CompositionDashboardProps {
   imageUrl: string | null;
   loading?: boolean;
   error?: string | null;
+  /** Stagger offset (seconds) so this section can cascade in after siblings. */
+  delay?: number;
 }
 
 interface ToggleDef {
@@ -31,9 +33,10 @@ export function CompositionDashboard({
   imageUrl,
   loading = false,
   error = null,
+  delay = 0,
 }: CompositionDashboardProps) {
   return (
-    <motion.div {...sectionReveal(0)}>
+    <motion.div {...sectionMount(delay)}>
       <Section number="02" title="COMPOSITION" description={SECTION_DESCRIPTION}>
         {loading ? (
           <p className="text-sm text-muted">Analyzing composition…</p>

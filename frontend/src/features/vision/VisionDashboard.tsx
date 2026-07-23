@@ -6,7 +6,7 @@ import { MetricCard, MetricCardSkeleton } from "@/components/MetricCard";
 import { RGBHistogram } from "@/components/RGBHistogram";
 import { Section } from "@/components/Section";
 import {
-  sectionReveal,
+  sectionMount,
   STAGGER_VIEWPORT,
   staggerContainer,
   staggerItem,
@@ -17,6 +17,8 @@ interface VisionDashboardProps {
   vision: VisionInfo | null;
   loading?: boolean;
   error?: string | null;
+  /** Stagger offset (seconds) so this section can cascade in after siblings. */
+  delay?: number;
 }
 
 const SECTION_DESCRIPTION =
@@ -26,9 +28,10 @@ export function VisionDashboard({
   vision,
   loading = false,
   error = null,
+  delay = 0,
 }: VisionDashboardProps) {
   return (
-    <motion.div {...sectionReveal(0)}>
+    <motion.div {...sectionMount(delay)}>
       <Section number="01" title="VISION ANALYSIS" description={SECTION_DESCRIPTION}>
         {loading ? (
           <MetricGridSkeleton />

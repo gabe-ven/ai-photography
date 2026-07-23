@@ -12,12 +12,12 @@ export interface EditCanvasHandle {
 }
 
 interface EditCanvasProps {
-  imageUrl: string;
+  file: File;
   adjustments: GradingAdjustments;
 }
 
 export const EditCanvas = forwardRef<EditCanvasHandle, EditCanvasProps>(function EditCanvas(
-  { imageUrl, adjustments },
+  { file, adjustments },
   ref,
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,10 +36,12 @@ export const EditCanvas = forwardRef<EditCanvasHandle, EditCanvasProps>(function
     ctx.putImageData(processImageData(source, adjustmentsRef.current), 0, 0);
   }
 
-  // Load the image once per URL, draw the capped-resolution preview source
-  // into an offscreen buffer.
+  // Decode the original file once per selection (own object URL, independent
+  // of the app's display thumbnail) and draw the capped-resolution preview
+  // source into an offscreen buffer.
   useEffect(() => {
     let cancelled = false;
+    const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       if (cancelled) return;
@@ -64,12 +66,13 @@ export const EditCanvas = forwardRef<EditCanvasHandle, EditCanvasProps>(function
       }
       render();
     };
-    img.src = imageUrl;
+    img.src = url;
     return () => {
       cancelled = true;
+      URL.revokeObjectURL(url);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageUrl]);
+  }, [file]);
 
   // Redraw on adjustment change, batched to one paint per frame so
   // dragging a slider stays smooth.

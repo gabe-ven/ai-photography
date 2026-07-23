@@ -1,4 +1,4 @@
-# Photographer Brain — Backend
+# FrameGrader — Backend
 
 FastAPI service that runs the computer-vision pipeline, extracts EXIF, and
 orchestrates the AI (vision-language model + LLM) to produce the photo analysis.

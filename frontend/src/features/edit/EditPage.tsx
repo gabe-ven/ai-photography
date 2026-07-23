@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Section } from "@/components/Section";
 import { ZERO_ADJUSTMENTS } from "./adjustments";
@@ -35,7 +36,6 @@ const DETAIL_SLIDERS: SliderConfig[] = [
 
 interface EditPageProps {
   file: File;
-  previewUrl: string;
   colorGrade: ColorGradeResponse | null;
   colorGradeStatus: "idle" | "loading" | "success" | "error";
   colorGradeError: string | null;
@@ -44,7 +44,6 @@ interface EditPageProps {
 
 export function EditPage({
   file,
-  previewUrl,
   colorGrade,
   colorGradeStatus,
   colorGradeError,
@@ -55,6 +54,20 @@ export function EditPage({
   const initializedRef = useRef(colorGrade?.available ?? false);
   const canvasRef = useRef<EditCanvasHandle>(null);
   const [exporting, setExporting] = useState(false);
+  const [resetConfirmed, setResetConfirmed] = useState(false);
+  const resetConfirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetConfirmTimeoutRef.current) clearTimeout(resetConfirmTimeoutRef.current);
+    };
+  }, []);
+
+  const confirmReset = () => {
+    setResetConfirmed(true);
+    if (resetConfirmTimeoutRef.current) clearTimeout(resetConfirmTimeoutRef.current);
+    resetConfirmTimeoutRef.current = setTimeout(() => setResetConfirmed(false), 1200);
+  };
 
   // Fill sliders from the AI suggestion the first time it arrives; never
   // overwrites adjustments the user has already made.
@@ -78,7 +91,9 @@ export function EditPage({
       a.href = url;
       a.download = editedFileName(file.name);
       a.click();
-      URL.revokeObjectURL(url);
+      // Revoking synchronously right after click() races the browser's
+      // download hand-off and can fail the download; defer it instead.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } finally {
       setExporting(false);
     }
@@ -99,7 +114,13 @@ export function EditPage({
     ));
 
   return (
-    <div className="space-y-8 py-16">
+    <motion.div
+      initial={{ opacity: 0, x: 40 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -40 }}
+      transition={{ type: "spring", stiffness: 120, damping: 24 }}
+      className="space-y-8 py-16"
+    >
       <button
         onClick={onBack}
         className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
@@ -110,7 +131,7 @@ export function EditPage({
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="flex flex-col items-start gap-4">
           <div className="inline-block max-w-full overflow-hidden border border-border bg-surface">
-            <EditCanvas ref={canvasRef} imageUrl={previewUrl} adjustments={adjustments} />
+            <EditCanvas ref={canvasRef} file={file} adjustments={adjustments} />
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -161,24 +182,44 @@ export function EditPage({
               </div>
             ) : null}
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
-                onClick={() => setAdjustments(aiAdjustments)}
+                onClick={() => {
+                  setAdjustments(aiAdjustments);
+                  confirmReset();
+                }}
                 className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
               >
                 Reset to AI values
               </button>
               <button
-                onClick={() => setAdjustments(ZERO_ADJUSTMENTS)}
+                onClick={() => {
+                  setAdjustments(ZERO_ADJUSTMENTS);
+                  confirmReset();
+                }}
                 className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-heading hover:text-heading"
               >
                 Reset to original
               </button>
+              <AnimatePresence>
+                {resetConfirmed && (
+                  <motion.span
+                    key="reset-confirm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="font-mono text-xs text-muted"
+                  >
+                    ✓ Reset
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
