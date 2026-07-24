@@ -5,6 +5,8 @@ interface LeadingLinesOverlayProps {
   width: number;
   height: number;
   lines: LineSegment[];
+  /** Reveal delay (s) — staggered on first paint, 0 for live toggles. */
+  delay?: number;
 }
 
 /** Detected leading line segments, drawn with an animated "draw" effect. */
@@ -12,6 +14,7 @@ export function LeadingLinesOverlay({
   width,
   height,
   lines,
+  delay = 0,
 }: LeadingLinesOverlayProps) {
   const stroke = Math.max(width, height) / 300;
 
@@ -20,7 +23,7 @@ export function LeadingLinesOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.3, delay }}
     >
       {lines.map((line, i) => (
         <motion.line
@@ -35,7 +38,7 @@ export function LeadingLinesOverlay({
           strokeOpacity={0.6}
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 0.6 }}
-          transition={{ duration: 0.6, delay: i * 0.05, ease: "easeOut" }}
+          transition={{ duration: 0.6, delay: delay + i * 0.05, ease: "easeOut" }}
         />
       ))}
     </motion.g>

@@ -2,6 +2,8 @@ import { motion, useInView } from "framer-motion";
 import { useRef, type ReactNode } from "react";
 import { SECTION_LABEL_SPRING, SECTION_LINE_SPRING } from "@/lib/motionVariants";
 
+const INVIEW_OPTIONS = { once: true, amount: 0.6 } as const;
+
 interface SectionProps {
   /** Editorial section number, e.g. "01". */
   number: string;
@@ -19,39 +21,45 @@ interface SectionProps {
  *
  * The hr and the number/title label are sequenced explicitly via useInView
  * (rather than each having its own whileInView) so the label visibly waits
- * for the line to finish drawing before it slides in.
+ * for the line to finish drawing before it slides in. The ref is scoped to
+ * just this header block (not the whole section) — sections can run to
+ * thousands of pixels of content, and an `amount` fraction measured against
+ * the entire section would only cross its threshold once the header itself
+ * has already scrolled off-screen.
  */
 export function Section({ number, title, description, action, children }: SectionProps) {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.2 });
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, INVIEW_OPTIONS);
 
   return (
-    <section ref={ref}>
-      <motion.hr
-        className="border-border"
-        initial={{ scaleX: 0 }}
-        animate={inView ? { scaleX: 1 } : { scaleX: 0 }}
-        transition={SECTION_LINE_SPRING}
-        style={{ transformOrigin: "left" }}
-      />
-      <div className="mb-8 mt-6 flex items-center justify-between gap-4">
-        <motion.div
-          className="flex items-center gap-3"
-          initial={{ opacity: 0, x: -8 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
-          transition={{ ...SECTION_LABEL_SPRING, delay: 0.15 }}
-        >
-          <span className="font-mono text-xs text-accent">{number}</span>
-          <span className="font-mono text-xs text-subtle">/</span>
-          <span className="font-mono text-xs uppercase tracking-widest text-muted">
-            {title}
-          </span>
-        </motion.div>
-        {action}
+    <section>
+      <div ref={ref}>
+        <motion.hr
+          className="border-border"
+          initial={{ scaleX: 0 }}
+          animate={inView ? { scaleX: 1 } : { scaleX: 0 }}
+          transition={SECTION_LINE_SPRING}
+          style={{ transformOrigin: "left" }}
+        />
+        <div className="mb-8 mt-6 flex items-center justify-between gap-4">
+          <motion.div
+            className="flex items-center gap-3"
+            initial={{ opacity: 0, x: -8 }}
+            animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
+            transition={{ ...SECTION_LABEL_SPRING, delay: 0.15 }}
+          >
+            <span className="font-mono text-xs text-subtle">{number}</span>
+            <span className="font-mono text-xs text-subtle">—</span>
+            <span className="font-mono text-xs uppercase tracking-widest text-muted">
+              {title}
+            </span>
+          </motion.div>
+          {action}
+        </div>
+        {description && (
+          <p className="-mt-6 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
+        )}
       </div>
-      {description && (
-        <p className="-mt-6 mb-8 max-w-2xl text-sm text-muted">{description}</p>
-      )}
       {children}
     </section>
   );

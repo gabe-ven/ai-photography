@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    app_name: str = "Photographer Brain"
+    app_name: str = "Frame Grader"
     allowed_origins: str = "http://localhost:5173"
     max_upload_mb: int = 25
 

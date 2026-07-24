@@ -5,6 +5,8 @@ interface RuleOfThirdsOverlayProps {
   width: number;
   height: number;
   ruleOfThirds: RuleOfThirds;
+  /** Reveal delay (s) — staggered on first paint, 0 for live toggles. */
+  delay?: number;
 }
 
 /** Rule-of-thirds grid + the four power points (nearest one highlighted). */
@@ -12,6 +14,7 @@ export function RuleOfThirdsOverlay({
   width,
   height,
   ruleOfThirds,
+  delay = 0,
 }: RuleOfThirdsOverlayProps) {
   const stroke = Math.max(width, height) / 400;
   const radius = Math.max(width, height) / 90;
@@ -25,7 +28,7 @@ export function RuleOfThirdsOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.4, delay }}
     >
       {xs.map((x) => (
         <line key={`vx-${x}`} x1={x} y1={0} x2={x} y2={height} stroke="white" strokeOpacity={0.15} strokeWidth={stroke} />

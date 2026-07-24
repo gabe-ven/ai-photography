@@ -9,6 +9,8 @@ interface SubjectMarkerProps {
   bbox?: BoundingBox | null;
   /** Detected subject label, shown beside the box when available. */
   label?: string | null;
+  /** Reveal delay (s) — staggered on first paint, 0 for live toggles. */
+  delay?: number;
 }
 
 /**
@@ -21,6 +23,7 @@ export function SubjectMarker({
   centroid,
   bbox,
   label,
+  delay = 0,
 }: SubjectMarkerProps) {
   const cx = centroid.x * width;
   const cy = centroid.y * height;
@@ -42,7 +45,7 @@ export function SubjectMarker({
       initial={{ opacity: 0, scale: 0.6 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.6 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      transition={{ duration: 0.35, ease: "easeOut", delay }}
       style={{ transformOrigin: `${cx}px ${cy}px` }}
     >
       {box && (

@@ -1,4 +1,4 @@
-# Photographer Brain
+# Frame Grader
 
 Upload a photograph, get a structured critique: composition metrics, lighting/vision
 stats, EXIF, and improvement suggestions. The core of the composition analysis is a

@@ -1,26 +1,41 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "EB Garamond", Georgia, serif;
   --font-mono: "DM Mono", monospace;
+  --font-display: "EB Garamond", Georgia, serif;
 
-  /* motion.dev-style dark palette */
-  --color-bg: #0a0a0a;
-  --color-surface: #111111;
-  --color-surface-hover: #161616;
-  --color-border: #222222;
-  --color-border-strong: #2e2e2e;
-  --color-muted: #666666;
-  --color-dim: #444444;
-  --color-subtle: #333333;
-  --color-ink: #ffffff;
-  --color-heading: #ffffff;
-  --color-accent: #ffe234;
+  /* newspaper monochrome palette — black/white/grey only */
+  --color-bg: #ffffff;
+  --color-bg-off: #fafafa;
+  --color-bg-card: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #fafafa;
+  --color-border: #e0e0e0;
+  --color-border-strong: #c4c4c4;
+  --color-text: #0a0a0a;
+  --color-muted: #6b6b6b;
+  --color-dim: #858585;
+  --color-subtle: #a0a0a0;
+  --color-ink: #0a0a0a;
+  --color-heading: #0a0a0a;
+  --color-accent: #0a0a0a;
+  --color-bg-dark: #0a0a0a;
+  --color-cream: #ffffff;
+  --color-tag-bg: #f0f0f0;
+  --color-tag-text: #0a0a0a;
 }
 
 body {
   background-color: var(--color-bg);
-  color: var(--color-ink);
+  color: var(--color-text);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 0;
 }

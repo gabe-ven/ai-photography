@@ -5,10 +5,12 @@ interface HorizonOverlayProps {
   width: number;
   height: number;
   horizon: Horizon;
+  /** Reveal delay (s) — staggered on first paint, 0 for live toggles. */
+  delay?: number;
 }
 
 /** Detected horizon line, drawn with its estimated tilt. */
-export function HorizonOverlay({ width, height, horizon }: HorizonOverlayProps) {
+export function HorizonOverlay({ width, height, horizon, delay = 0 }: HorizonOverlayProps) {
   if (!horizon.horizon_detected || horizon.horizon_y === null) return null;
 
   const y = horizon.horizon_y * height;
@@ -22,7 +24,7 @@ export function HorizonOverlay({ width, height, horizon }: HorizonOverlayProps) 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.4, delay }}
     >
       <motion.line
         x1={0}
@@ -34,7 +36,7 @@ export function HorizonOverlay({ width, height, horizon }: HorizonOverlayProps) 
         strokeDasharray={`${stroke * 4} ${stroke * 3}`}
         initial={{ pathLength: 0 }}
         animate={{ pathLength: 1 }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
+        transition={{ duration: 0.7, ease: "easeOut", delay }}
       />
     </motion.g>
   );

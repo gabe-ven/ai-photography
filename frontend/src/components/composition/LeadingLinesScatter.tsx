@@ -39,13 +39,13 @@ export function LeadingLinesScatter({
     <div className="h-full w-full">
       <ResponsiveContainer width="100%" height="100%" minHeight={200}>
         <ScatterChart margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="#222222" />
+          <CartesianGrid stroke="#e8e3da" />
           <XAxis
             type="number"
             dataKey="x"
             domain={[0, 1]}
-            tick={{ fill: "#444444", fontSize: 10 }}
-            axisLine={{ stroke: "#222222" }}
+            tick={{ fill: "#a19c93", fontSize: 10 }}
+            axisLine={{ stroke: "#e8e3da" }}
             tickLine={false}
           />
           <YAxis
@@ -53,21 +53,21 @@ export function LeadingLinesScatter({
             dataKey="y"
             domain={[0, 1]}
             reversed
-            tick={{ fill: "#444444", fontSize: 10 }}
-            axisLine={{ stroke: "#222222" }}
+            tick={{ fill: "#a19c93", fontSize: 10 }}
+            axisLine={{ stroke: "#e8e3da" }}
             tickLine={false}
           />
           <ZAxis range={[50, 50]} />
           <Tooltip
-            cursor={{ stroke: "#222222" }}
-            contentStyle={DARK_TOOLTIP}
-            labelStyle={{ color: "#ffffff" }}
-            itemStyle={{ color: "#ffe234" }}
+            cursor={{ stroke: "#e8e3da" }}
+            contentStyle={TOOLTIP_STYLE}
+            labelStyle={{ color: "#141412" }}
+            itemStyle={{ color: "#c17a4a" }}
             formatter={(value) => Number(value).toFixed(3)}
           />
           <Scatter
             data={data}
-            fill="#ffe234"
+            fill="#c17a4a"
             isAnimationActive
             animationDuration={800}
           />
@@ -81,10 +81,10 @@ function round3(v: number): number {
   return Math.round(v * 1000) / 1000;
 }
 
-const DARK_TOOLTIP = {
-  background: "#111111",
-  border: "1px solid #222222",
+const TOOLTIP_STYLE = {
+  background: "#ffffff",
+  border: "1px solid #e8e3da",
   borderRadius: 2,
-  color: "#ffffff",
+  color: "#141412",
   fontSize: 12,
 } as const;

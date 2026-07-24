@@ -1,4 +1,4 @@
-# Photographer Brain — Frontend
+# Frame Grader — Frontend
 
 React + TypeScript + Tailwind CSS (Vite) single-page app. Handles the upload
 experience and renders the analysis report returned by the backend.

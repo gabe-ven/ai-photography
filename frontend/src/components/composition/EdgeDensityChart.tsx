@@ -33,24 +33,24 @@ export function EdgeDensityChart({
     <div className="h-full w-full">
       <ResponsiveContainer width="100%" height="100%" minHeight={200}>
         <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="#222222" vertical={false} />
+          <CartesianGrid stroke="#e8e3da" vertical={false} />
           <XAxis
             dataKey="region"
-            tick={{ fill: "#444444", fontSize: 11 }}
-            axisLine={{ stroke: "#222222" }}
+            tick={{ fill: "#a19c93", fontSize: 11 }}
+            axisLine={{ stroke: "#e8e3da" }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: "#444444", fontSize: 10 }}
+            tick={{ fill: "#a19c93", fontSize: 10 }}
             axisLine={false}
             tickLine={false}
             unit="%"
           />
           <Tooltip
-            cursor={{ fill: "rgba(255,255,255,0.04)" }}
-            contentStyle={DARK_TOOLTIP}
-            labelStyle={{ color: "#ffffff" }}
-            itemStyle={{ color: "#ffe234" }}
+            cursor={{ fill: "rgba(20,20,18,0.04)" }}
+            contentStyle={TOOLTIP_STYLE}
+            labelStyle={{ color: "#141412" }}
+            itemStyle={{ color: "#c17a4a" }}
             formatter={(value) => [`${Number(value)}%`, "Edge density"]}
           />
           <Bar
@@ -60,7 +60,7 @@ export function EdgeDensityChart({
             animationDuration={800}
           >
             {data.map((entry) => (
-              <Cell key={entry.region} fill="#ffe234" fillOpacity={0.6} />
+              <Cell key={entry.region} fill="#c17a4a" fillOpacity={0.6} />
             ))}
           </Bar>
         </BarChart>
@@ -73,10 +73,10 @@ function round1(v: number): number {
   return Math.round(v * 10) / 10;
 }
 
-const DARK_TOOLTIP = {
-  background: "#111111",
-  border: "1px solid #222222",
+const TOOLTIP_STYLE = {
+  background: "#ffffff",
+  border: "1px solid #e8e3da",
   borderRadius: 2,
-  color: "#ffffff",
+  color: "#141412",
   fontSize: 12,
 } as const;

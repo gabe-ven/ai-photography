@@ -3,6 +3,8 @@ import { useEffect, useRef } from "react";
 
 interface EdgeOverlayProps {
   imageUrl: string;
+  /** Reveal delay (s) — staggered on first paint, 0 for live toggles. */
+  delay?: number;
 }
 
 /**
@@ -10,7 +12,7 @@ interface EdgeOverlayProps {
  * uploaded pixels (not fabricated) and paints it on a transparent canvas.
  * The canvas uses object-contain so it letterboxes identically to the photo.
  */
-export function EdgeOverlay({ imageUrl }: EdgeOverlayProps) {
+export function EdgeOverlay({ imageUrl, delay = 0 }: EdgeOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -82,7 +84,7 @@ export function EdgeOverlay({ imageUrl }: EdgeOverlayProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 0.85 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.4, delay }}
       className="pointer-events-none absolute inset-0 h-full w-full object-contain"
     />
   );

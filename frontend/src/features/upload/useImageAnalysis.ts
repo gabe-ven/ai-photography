@@ -30,7 +30,7 @@ async function createPreviewThumbnail(file: File): Promise<string> {
   try {
     const bitmap = await createImageBitmap(file, {
       resizeWidth: THUMBNAIL_MAX_EDGE,
-      resizeQuality: "medium",
+      resizeQuality: "low",
     });
     const canvas = document.createElement("canvas");
     canvas.width = bitmap.width;

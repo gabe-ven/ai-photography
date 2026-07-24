@@ -50,8 +50,8 @@ export function LuminanceChart({ histogram }: { histogram: Histogram }) {
       >
         <motion.path
           d={path}
-          fill="rgba(255,255,255,0.06)"
-          stroke="#ffffff"
+          fill="rgba(20,20,18,0.06)"
+          stroke="#141412"
           strokeWidth={1}
           initial={{ pathLength: 0, fillOpacity: 0 }}
           animate={{ pathLength: 1, fillOpacity: 1 }}
@@ -62,7 +62,7 @@ export function LuminanceChart({ histogram }: { histogram: Histogram }) {
           x2={meanX}
           y1={0}
           y2={VIEW_H}
-          stroke="#666666"
+          stroke="#8c8880"
           strokeWidth={1}
           strokeDasharray="3 3"
         />

@@ -1,17 +1,29 @@
 import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { useEffect, useState } from "react";
-import { CompositionDashboard } from "@/components/composition/CompositionDashboard";
-import { ShimmerOverlay } from "@/components/Shimmer";
-import { AICritiqueDashboard } from "@/features/ai/AICritiqueDashboard";
-import { FujifilmRecipeSection } from "@/features/ai/FujifilmRecipeSection";
+import { PhotoSkeleton } from "@/components/Shimmer";
 import { EditPage } from "@/features/edit/EditPage";
-import { VisionDashboard } from "@/features/vision/VisionDashboard";
+import { ResultsView } from "@/features/results/ResultsView";
+import { MAX_UPLOAD_MB } from "@/lib/api";
 import { CARD_SPRING, HERO_SPRING } from "@/lib/motionVariants";
-import { CameraInfoCard } from "./CameraInfoCard";
 import { Dropzone } from "./Dropzone";
 import { useImageAnalysis } from "./useImageAnalysis";
 
 type Stage = "hero" | "analyzing" | "preview" | "editing" | "results";
+
+const FEATURE_HINTS = [
+  {
+    label: "Vision analysis",
+    description: "Brightness, contrast, sharpness, dynamic range",
+  },
+  {
+    label: "Composition",
+    description: "Rule of thirds, leading lines, subject placement",
+  },
+  {
+    label: "AI critique",
+    description: "Scene, lighting, strengths, recreation guide",
+  },
+];
 
 export function UploadPanel() {
   const {
@@ -50,36 +62,60 @@ export function UploadPanel() {
   return (
     <AnimatePresence mode="popLayout">
       {stage === "hero" && (
-        <motion.div
-          key="hero"
-          exit={{ opacity: 0 }}
-          className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center py-16"
-        >
-          <p className="font-mono text-xs uppercase tracking-widest text-muted">
-            Photographer Brain
-          </p>
-          <h1 className="mt-6 leading-[0.95]">
-            <motion.span
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={HERO_SPRING}
-              className="block font-serif text-7xl italic tracking-tight text-heading md:text-9xl"
-            >
-              Photographer
-            </motion.span>
-            <motion.span
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ ...HERO_SPRING, delay: 0.1 }}
-              className="block font-sans text-7xl font-black tracking-tighter text-accent md:text-9xl"
-            >
-              Brain.
-            </motion.span>
-          </h1>
-          <div className="mt-12">
-            <Dropzone onFile={selectFile} />
+        <motion.div key="hero" exit={{ opacity: 0 }}>
+          <nav className="relative left-1/2 flex w-screen -translate-x-1/2 items-center justify-between px-6 py-4">
+            <span className="font-mono text-xs tracking-widest text-muted">
+              FRAME GRADER
+            </span>
+            <span className="font-display text-base text-text">Frame Grader</span>
+            <span className="font-sans text-xs text-muted">by Gabriel Venezia</span>
+          </nav>
+          <hr />
+
+          <div className="py-20">
+            <div className="mx-auto max-w-2xl text-center">
+              <h1 className="font-display text-5xl font-normal leading-tight text-text md:text-6xl lg:text-7xl">
+                <motion.span
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={HERO_SPRING}
+                  className="block"
+                >
+                  Upload a photograph.
+                </motion.span>
+                <motion.span
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ ...HERO_SPRING, delay: 0.08 }}
+                  className="block"
+                >
+                  Get an AI critique.
+                </motion.span>
+              </h1>
+              <p className="mt-4 font-sans text-sm text-muted">
+                Grounded in real measurements and Claude AI analysis.
+              </p>
+              <div className="mt-10 text-left">
+                <Dropzone onFile={selectFile} />
+              </div>
+              {error && <ErrorBanner message={error} />}
+            </div>
+
+            <div className="mt-16 grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              {FEATURE_HINTS.map((hint) => (
+                <div key={hint.label} className="px-6 py-4 text-center first:pl-0 last:pr-0">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-subtle">
+                    {hint.label}
+                  </p>
+                  <p className="mt-1 font-sans text-xs text-muted">{hint.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          {error && <ErrorBanner message={error} />}
+          <hr />
+          <p className="py-6 text-center font-mono text-xs text-subtle">
+            Supports JPEG, PNG, WEBP, TIFF or BMP · up to {MAX_UPLOAD_MB}MB
+          </p>
         </motion.div>
       )}
 
@@ -108,7 +144,9 @@ export function UploadPanel() {
             {previewUrl ? (
               <motion.img
                 layoutId="photo-preview"
-                transition={CARD_SPRING}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ layout: CARD_SPRING, default: { duration: 0.25, ease: "easeOut" } }}
                 src={previewUrl}
                 alt={file.name}
                 className="block max-h-[520px] w-auto max-w-full"
@@ -144,84 +182,22 @@ export function UploadPanel() {
 
       {/* Analysis done (success or error) — the full report. */}
       {stage === "results" && file && (
-        <motion.div
+        <ResultsView
           key="results"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="space-y-16 py-16"
-        >
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="flex flex-col items-start gap-3">
-              <div className="inline-block max-w-full overflow-hidden">
-                {previewUrl ? (
-                  <motion.img
-                    layoutId="photo-preview"
-                    transition={CARD_SPRING}
-                    src={previewUrl}
-                    alt={file.name}
-                    className="block max-h-[520px] w-auto max-w-full"
-                  />
-                ) : (
-                  <PhotoSkeleton />
-                )}
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={reset}
-                  className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-border-strong hover:text-[#999999]"
-                >
-                  Choose another →
-                </button>
-                {status === "success" && (
-                  <button
-                    onClick={() => {
-                      setView("editing");
-                      fetchColorGrade();
-                    }}
-                    className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:border-border-strong hover:text-[#999999]"
-                  >
-                    Edit photo →
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col justify-center gap-6">
-              {result && <CameraInfoCard exif={result.exif} />}
-            </div>
-          </div>
-
-          <div className="space-y-16">
-            <VisionDashboard
-              vision={result?.vision ?? null}
-              loading={false}
-              error={status === "error" ? error : null}
-              delay={0}
-            />
-            <CompositionDashboard
-              composition={result?.composition ?? null}
-              semantic={ai?.semantic_composition ?? null}
-              imageUrl={previewUrl}
-              loading={false}
-              error={status === "error" ? error : null}
-              delay={0.2}
-            />
-            {status === "success" && (
-              <>
-                <AICritiqueDashboard
-                  ai={ai}
-                  loading={false}
-                  error={aiStatus === "error" ? aiError : null}
-                  delay={0.4}
-                />
-                {ai?.fujifilm_recipe?.applicable === true && (
-                  <FujifilmRecipeSection recipe={ai.fujifilm_recipe} />
-                )}
-              </>
-            )}
-          </div>
-        </motion.div>
+          file={file}
+          previewUrl={previewUrl}
+          status={status}
+          error={error}
+          result={result}
+          aiStatus={aiStatus}
+          aiError={aiError}
+          ai={ai}
+          onChooseAnother={reset}
+          onEditPhoto={() => {
+            setView("editing");
+            fetchColorGrade();
+          }}
+        />
       )}
     </AnimatePresence>
   );
@@ -281,7 +257,7 @@ function AnalyzingView({
           transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="pointer-events-none absolute inset-x-0 h-0.5 bg-accent shadow-[0_0_14px_2px_rgba(255,226,52,0.35)]"
+          className="pointer-events-none absolute inset-x-0 h-0.5 bg-accent shadow-[0_0_14px_2px_rgba(255,255,255,0.5)]"
           initial={{ top: "-25%" }}
           animate={{ top: ["-25%", "105%"] }}
           transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
@@ -321,7 +297,7 @@ function AnalyzeButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       onHoverStart={() => animate(arrowX, 6, ARROW_SPRING)}
       onHoverEnd={() => animate(arrowX, 0, ARROW_SPRING)}
-      className="bg-accent px-10 py-4 font-mono text-xs uppercase tracking-widest text-bg transition-colors hover:bg-[#fff7a0]"
+      className="bg-accent px-10 py-4 font-mono text-xs uppercase tracking-widest text-bg transition-colors hover:bg-[#2a2a2a]"
     >
       Analyze{" "}
       <motion.span className="inline-block" style={{ x: arrowX }}>
@@ -356,19 +332,9 @@ function CornerBrackets() {
   );
 }
 
-/** Sized placeholder shown for the brief window before the preview
- * thumbnail finishes decoding. */
-function PhotoSkeleton({ className = "h-[360px] w-[300px]" }: { className?: string }) {
-  return (
-    <div className={`relative overflow-hidden bg-bg ${className}`}>
-      <ShimmerOverlay />
-    </div>
-  );
-}
-
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="mt-4 border border-red-500/40 bg-red-500/10 px-4 py-3 font-mono text-sm text-red-300">
+    <div className="mt-4 border border-border bg-bg-off px-4 py-3 font-mono text-sm text-text">
       {message}
     </div>
   );

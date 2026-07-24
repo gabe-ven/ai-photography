@@ -137,7 +137,7 @@ export function EditPage({
             <button
               onClick={handleDownload}
               disabled={exporting}
-              className="bg-accent px-10 py-4 font-mono text-xs uppercase tracking-widest text-bg transition-colors hover:bg-[#fff7a0] disabled:opacity-50"
+              className="bg-accent px-10 py-4 font-mono text-xs uppercase tracking-widest text-bg transition-colors hover:bg-[#2a2a2a] disabled:opacity-50"
             >
               {exporting ? "Exporting…" : "Download"}
             </button>
